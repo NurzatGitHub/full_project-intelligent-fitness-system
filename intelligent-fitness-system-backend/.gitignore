@@ -1,0 +1,41 @@
+# Django
+__pycache__
+*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.sqlite3
+*.db
+*.log
+
+# Secrets
+backend/.env
+backend/.env.*
+.env
+.env.*
+*.pem
+*.key
+secrets.json
+
+# Android
+mobile/.gradle/
+mobile/.idea/
+mobile/*.iml
+mobile/local.properties
+mobile/captures/
+mobile/.externalNativeBuild/
+mobile/build/
+mobile/.cxx/
+mobile/*.keystore
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+.DS_Store

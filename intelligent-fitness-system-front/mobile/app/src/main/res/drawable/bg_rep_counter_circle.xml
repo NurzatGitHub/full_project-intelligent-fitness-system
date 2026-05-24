@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Outer halo ring -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:type="sweep"
+                android:startColor="@color/brand_primary_500"
+                android:centerColor="@color/brand_secondary_500"
+                android:endColor="@color/brand_primary_500"
+                android:centerX="0.5"
+                android:centerY="0.5" />
+        </shape>
+    </item>
+
+    <!-- Inner deep ink circle (creates the ring effect) -->
+    <item
+        android:bottom="4dp"
+        android:left="4dp"
+        android:right="4dp"
+        android:top="4dp">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="80dp"
+                android:centerX="0.5"
+                android:centerY="0.35"
+                android:startColor="@color/brand_primary_700"
+                android:endColor="@color/surface_dark" />
+        </shape>
+    </item>
+
+</layer-list>

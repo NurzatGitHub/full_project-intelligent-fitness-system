@@ -1,0 +1,22 @@
+[
+  {
+    "id": "ex1",
+    "titleEn": "Barbell Curl",
+    "description": "Сгибайте руки со штангой к плечам, держа локти прижатыми к корпусу.",
+    "mainId": "arms",
+    "subId": "biceps",
+    "equipment": "barbell",
+    "difficulty": "beginner",
+    "mediaPath": null
+  },
+  {
+    "id": "ex2",
+    "titleEn": "Hammer Curl",
+    "description": "Сгибание рук с гантелями нейтральным хватом. Нагружает бицепс и брахиалис.",
+    "mainId": "arms",
+    "subId": "biceps",
+    "equipment": "dumbbell",
+    "difficulty": "beginner",
+    "mediaPath": null
+  }
+]

@@ -1,0 +1,296 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- =============================================================== -->
+    <!--   Pulse — Material 3 light theme                                 -->
+    <!-- =============================================================== -->
+
+    <style name="Base.Theme.FitnessCoachAI" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <!-- Color tokens -->
+        <item name="colorPrimary">@color/brand_primary_500</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/brand_primary_100</item>
+        <item name="colorOnPrimaryContainer">@color/brand_primary_900</item>
+
+        <item name="colorSecondary">@color/brand_secondary_600</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">#D5FBED</item>
+        <item name="colorOnSecondaryContainer">#003824</item>
+
+        <item name="colorTertiary">@color/brand_tertiary_500</item>
+        <item name="colorOnTertiary">@color/white</item>
+        <item name="colorTertiaryContainer">#FFE0D6</item>
+        <item name="colorOnTertiaryContainer">#5C1500</item>
+
+        <item name="colorError">@color/status_error</item>
+        <item name="colorOnError">@color/white</item>
+
+        <item name="android:colorBackground">@color/surface_light</item>
+        <item name="colorSurface">@color/surface_light</item>
+        <item name="colorOnSurface">@color/on_surface_light</item>
+        <item name="colorSurfaceVariant">@color/surface_light_variant</item>
+        <item name="colorOnSurfaceVariant">@color/on_surface_light_variant</item>
+        <item name="colorSurfaceContainer">@color/surface_light_container</item>
+        <item name="colorSurfaceContainerHigh">@color/surface_light_alt</item>
+        <item name="colorOutline">@color/outline_light</item>
+        <item name="colorOutlineVariant">#E8E2F2</item>
+
+        <!-- Status bar / nav bar -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/surface_light</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">true</item>
+
+        <!-- Type & shape theming -->
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.Pulse.Display.Large</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.Pulse.Display.Medium</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.Pulse.Headline.Large</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Pulse.Headline.Medium</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Pulse.Title.Large</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Pulse.Title.Medium</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Pulse.Body.Large</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Pulse.Body.Medium</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Pulse.Label.Large</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.Pulse.Label.Small</item>
+
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.Pulse.Corner.XSmall</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.Pulse.Corner.Small</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.Pulse.Corner.Medium</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.Pulse.Corner.Large</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Pulse.Corner.XLarge</item>
+
+        <!-- Default fonts -->
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="fontFamily">sans-serif</item>
+
+        <!-- Material widgets -->
+        <item name="materialButtonStyle">@style/Widget.Pulse.Button</item>
+        <item name="materialCardViewStyle">@style/Widget.Pulse.CardView</item>
+        <item name="bottomNavigationStyle">@style/Widget.Pulse.BottomNavigation</item>
+    </style>
+
+    <style name="Theme.FitnessCoachAI" parent="Base.Theme.FitnessCoachAI" />
+
+    <!-- Translucent variant for hero/onboarding screens (edge-to-edge) -->
+    <style name="Theme.FitnessCoachAI.EdgeToEdge" parent="Theme.FitnessCoachAI">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:fitsSystemWindows">false</item>
+    </style>
+
+    <!-- =============================================================== -->
+    <!--   Typography                                                     -->
+    <!-- =============================================================== -->
+
+    <style name="TextAppearance.Pulse.Display.Large" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="android:textSize">40sp</item>
+        <item name="android:lineHeight" tools:targetApi="p">48sp</item>
+        <item name="android:letterSpacing">-0.02</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Pulse.Display.Medium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="android:textSize">32sp</item>
+        <item name="android:lineHeight" tools:targetApi="p">40sp</item>
+        <item name="android:letterSpacing">-0.015</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Pulse.Headline.Large" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textSize">28sp</item>
+        <item name="android:lineHeight" tools:targetApi="p">34sp</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Pulse.Headline.Medium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:textSize">22sp</item>
+        <item name="android:lineHeight" tools:targetApi="p">28sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Pulse.Title.Large" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textSize">18sp</item>
+        <item name="android:lineHeight" tools:targetApi="p">24sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Pulse.Title.Medium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">16sp</item>
+        <item name="android:lineHeight" tools:targetApi="p">22sp</item>
+        <item name="android:textFontWeight" tools:targetApi="p">600</item>
+    </style>
+
+    <style name="TextAppearance.Pulse.Body.Large" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">15sp</item>
+        <item name="android:lineHeight" tools:targetApi="p">22sp</item>
+    </style>
+
+    <style name="TextAppearance.Pulse.Body.Medium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">13sp</item>
+        <item name="android:lineHeight" tools:targetApi="p">19sp</item>
+    </style>
+
+    <style name="TextAppearance.Pulse.Label.Large" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <style name="TextAppearance.Pulse.Label.Small" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">11sp</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <!-- Empty parent styles so dotted Pulse.* and Pulse.Text.* names resolve
+         (AAPT requires the implicit parent of a dotted style name to exist). -->
+    <style name="Pulse" />
+    <style name="Pulse.Text" />
+
+    <!-- Convenience text styles used in layouts -->
+    <style name="Pulse.Text.Hero" parent="TextAppearance.Pulse.Display.Medium">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="Pulse.Text.Section" parent="TextAppearance.Pulse.Title.Large">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="Pulse.Text.Caption" parent="TextAppearance.Pulse.Body.Medium">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <style name="Pulse.Text.MetricValue">
+        <item name="android:textSize">26sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="Pulse.Text.MetricLabel">
+        <item name="android:textSize">11sp</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- =============================================================== -->
+    <!--   Shape system                                                   -->
+    <!-- =============================================================== -->
+
+    <style name="ShapeAppearance.Pulse.Corner.XSmall" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerSize">6dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Pulse.Corner.Small" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Pulse.Corner.Medium" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Pulse.Corner.Large" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Pulse.Corner.XLarge" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerSize">32dp</item>
+    </style>
+
+    <!-- =============================================================== -->
+    <!--   Widget styles                                                  -->
+    <!-- =============================================================== -->
+
+    <style name="Widget.Pulse.Button" parent="Widget.Material3.Button">
+        <item name="android:minHeight">52dp</item>
+        <item name="cornerRadius">18dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pulse.Label.Large</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:paddingStart">22dp</item>
+        <item name="android:paddingEnd">22dp</item>
+    </style>
+
+    <style name="Widget.Pulse.Button.Tonal" parent="Widget.Material3.Button.TonalButton">
+        <item name="android:minHeight">52dp</item>
+        <item name="cornerRadius">18dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pulse.Label.Large</item>
+    </style>
+
+    <style name="Widget.Pulse.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">52dp</item>
+        <item name="cornerRadius">18dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="strokeWidth">1.5dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pulse.Label.Large</item>
+    </style>
+
+    <style name="Widget.Pulse.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textAppearance">@style/TextAppearance.Pulse.Label.Large</item>
+    </style>
+
+    <style name="Widget.Pulse.CardView" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">24dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="cardBackgroundColor">?attr/colorSurfaceContainer</item>
+        <item name="strokeWidth">0dp</item>
+        <item name="contentPadding">0dp</item>
+    </style>
+
+    <style name="Widget.Pulse.CardView.Outlined" parent="Widget.Material3.CardView.Outlined">
+        <item name="cardCornerRadius">24dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <style name="Widget.Pulse.BottomNavigation" parent="Widget.Material3.BottomNavigationView">
+        <item name="backgroundTint">?attr/colorSurface</item>
+        <item name="itemIconTint">@color/bottom_nav_item_color</item>
+        <item name="itemTextColor">@color/bottom_nav_item_color</item>
+        <item name="itemRippleColor">#22FFFFFF</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.Pulse.BottomNavigation.ActiveIndicator</item>
+        <item name="labelVisibilityMode">labeled</item>
+        <item name="elevation">0dp</item>
+    </style>
+
+    <style name="Widget.Pulse.BottomNavigation.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">?attr/colorPrimaryContainer</item>
+        <item name="android:width">64dp</item>
+        <item name="android:height">36dp</item>
+    </style>
+
+    <!-- Stat tile -->
+    <style name="Pulse.StatTile">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:gravity">start|center_vertical</item>
+        <item name="android:background">@drawable/bg_card_surface</item>
+    </style>
+
+    <!-- Pill -->
+    <style name="Pulse.Pill">
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+</resources>

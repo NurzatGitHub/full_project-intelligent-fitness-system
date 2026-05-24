@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape>
+            <solid android:color="@color/surface_dark" />
+        </shape>
+    </item>
+
+    <!-- Violet halo top -->
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:gradientRadius="640dp"
+                android:centerX="0.5"
+                android:centerY="-0.05"
+                android:startColor="#997C5CFF"
+                android:endColor="#000B0B14" />
+        </shape>
+    </item>
+
+    <!-- Coral pulse bottom -->
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:gradientRadius="520dp"
+                android:centerX="-0.1"
+                android:centerY="1.1"
+                android:startColor="#4DFF7A59"
+                android:endColor="#000B0B14" />
+        </shape>
+    </item>
+</layer-list>

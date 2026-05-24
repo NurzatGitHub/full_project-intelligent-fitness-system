@@ -1,0 +1,66 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- =============================================================== -->
+    <!--   Pulse — Material 3 dark theme                                  -->
+    <!-- =============================================================== -->
+
+    <style name="Base.Theme.FitnessCoachAI" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <!-- Color tokens -->
+        <item name="colorPrimary">@color/brand_primary_300</item>
+        <item name="colorOnPrimary">@color/brand_primary_900</item>
+        <item name="colorPrimaryContainer">@color/brand_primary_800</item>
+        <item name="colorOnPrimaryContainer">@color/brand_primary_100</item>
+
+        <item name="colorSecondary">@color/brand_secondary_400</item>
+        <item name="colorOnSecondary">#003824</item>
+        <item name="colorSecondaryContainer">#005A3B</item>
+        <item name="colorOnSecondaryContainer">#7DF7C7</item>
+
+        <item name="colorTertiary">@color/brand_tertiary_300</item>
+        <item name="colorOnTertiary">#5C1500</item>
+        <item name="colorTertiaryContainer">#8B2D11</item>
+        <item name="colorOnTertiaryContainer">#FFE0D6</item>
+
+        <item name="colorError">@color/status_error</item>
+        <item name="colorOnError">#5F0019</item>
+
+        <item name="android:colorBackground">@color/surface_dark</item>
+        <item name="colorSurface">@color/surface_dark</item>
+        <item name="colorOnSurface">@color/on_surface_dark</item>
+        <item name="colorSurfaceVariant">@color/surface_dark_variant</item>
+        <item name="colorOnSurfaceVariant">@color/on_surface_dark_variant</item>
+        <item name="colorSurfaceContainer">@color/surface_dark_container</item>
+        <item name="colorSurfaceContainerHigh">@color/surface_dark_high</item>
+        <item name="colorOutline">@color/outline_dark</item>
+        <item name="colorOutlineVariant">@color/outline_dark_subtle</item>
+
+        <!-- Status / nav bars -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/surface_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:ignore="NewApi">false</item>
+
+        <!-- Type & shape (inherit from non-night) -->
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.Pulse.Display.Large</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.Pulse.Display.Medium</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.Pulse.Headline.Large</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Pulse.Headline.Medium</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Pulse.Title.Large</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Pulse.Title.Medium</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Pulse.Body.Large</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Pulse.Body.Medium</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Pulse.Label.Large</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.Pulse.Label.Small</item>
+
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.Pulse.Corner.XSmall</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.Pulse.Corner.Small</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.Pulse.Corner.Medium</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.Pulse.Corner.Large</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Pulse.Corner.XLarge</item>
+
+        <item name="materialButtonStyle">@style/Widget.Pulse.Button</item>
+        <item name="materialCardViewStyle">@style/Widget.Pulse.CardView</item>
+        <item name="bottomNavigationStyle">@style/Widget.Pulse.BottomNavigation</item>
+    </style>
+</resources>

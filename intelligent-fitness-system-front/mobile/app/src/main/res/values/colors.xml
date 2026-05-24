@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ============================================================ -->
+    <!--  Pulse — Fitness Coach AI design system                       -->
+    <!--  Brand palette: electric purple, mint pulse, coral intensity  -->
+    <!-- ============================================================ -->
+
+    <!-- Static neutrals -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- Brand — primary (electric violet) -->
+    <color name="brand_primary_50">#F4F0FF</color>
+    <color name="brand_primary_100">#E5DAFF</color>
+    <color name="brand_primary_200">#C9B0FF</color>
+    <color name="brand_primary_300">#A988FF</color>
+    <color name="brand_primary_400">#8C6CFF</color>
+    <color name="brand_primary_500">#7C5CFF</color>
+    <color name="brand_primary_600">#6442F0</color>
+    <color name="brand_primary_700">#4C2DC8</color>
+    <color name="brand_primary_800">#341E91</color>
+    <color name="brand_primary_900">#1C1257</color>
+
+    <!-- Brand — secondary (mint pulse) -->
+    <color name="brand_secondary_300">#7DF7C7</color>
+    <color name="brand_secondary_400">#3FF1B0</color>
+    <color name="brand_secondary_500">#00E5A8</color>
+    <color name="brand_secondary_600">#00B98A</color>
+    <color name="brand_secondary_700">#00876A</color>
+
+    <!-- Brand — tertiary (coral intensity) -->
+    <color name="brand_tertiary_300">#FFB59B</color>
+    <color name="brand_tertiary_400">#FF9577</color>
+    <color name="brand_tertiary_500">#FF7A59</color>
+    <color name="brand_tertiary_600">#E25C3D</color>
+
+    <!-- Brand — info / sky -->
+    <color name="brand_info_400">#5BC6FF</color>
+    <color name="brand_info_500">#33B0FF</color>
+
+    <!-- Semantic states -->
+    <color name="status_success">#3FF1B0</color>
+    <color name="status_success_dim">#1FE2A1</color>
+    <color name="status_warning">#FFB445</color>
+    <color name="status_error">#FF5C7A</color>
+    <color name="status_error_dim">#E13E5E</color>
+
+    <!-- Light theme surfaces -->
+    <color name="surface_light">#FFFFFF</color>
+    <color name="surface_light_alt">#F6F4FF</color>
+    <color name="surface_light_variant">#EFEAF7</color>
+    <color name="surface_light_container">#F0EDF8</color>
+    <color name="on_surface_light">#1A1525</color>
+    <color name="on_surface_light_variant">#5A5269</color>
+    <color name="outline_light">#D9D2E5</color>
+
+    <!-- Dark theme surfaces (deep ink with violet undertone) -->
+    <color name="surface_dark">#0B0B14</color>
+    <color name="surface_dark_alt">#11111D</color>
+    <color name="surface_dark_variant">#181826</color>
+    <color name="surface_dark_container">#1E1E2C</color>
+    <color name="surface_dark_high">#262636</color>
+    <color name="on_surface_dark">#EDEAF7</color>
+    <color name="on_surface_dark_variant">#A5A1B8</color>
+    <color name="on_surface_dark_muted">#6F6A82</color>
+    <color name="outline_dark">#2A2A3A</color>
+    <color name="outline_dark_subtle">#1F1F2E</color>
+
+    <!-- Day card states (used by HomeFragment.bindDay) -->
+    <color name="day_card_today_bg">#1F183D</color>
+    <color name="day_card_today_stroke">#7C5CFF</color>
+    <color name="day_card_today_label">#C9B0FF</color>
+    <color name="day_card_done_bg">#0F2B22</color>
+    <color name="day_card_done_stroke">#00E5A8</color>
+    <color name="day_card_done_label">#7DF7C7</color>
+    <color name="day_card_rest_bg">#15151F</color>
+    <color name="day_card_rest_stroke">#252535</color>
+    <color name="day_card_rest_label">#A5A1B8</color>
+    <color name="day_card_workout_bg">#181826</color>
+    <color name="day_card_workout_stroke">#332D55</color>
+    <color name="day_card_workout_label">#EDEAF7</color>
+
+    <!-- Muscle group accent palette (used by category cards & stats) -->
+    <color name="muscle_chest">#33B0FF</color>
+    <color name="muscle_chest_glow">#1A33B0FF</color>
+    <color name="muscle_back">#7C5CFF</color>
+    <color name="muscle_back_glow">#1A7C5CFF</color>
+    <color name="muscle_legs">#00E5A8</color>
+    <color name="muscle_legs_glow">#1A00E5A8</color>
+    <color name="muscle_arms">#FF9577</color>
+    <color name="muscle_arms_glow">#1AFF9577</color>
+    <color name="muscle_abs">#FFD166</color>
+    <color name="muscle_abs_glow">#1AFFD166</color>
+    <color name="muscle_cardio">#FF5C7A</color>
+    <color name="muscle_cardio_glow">#1AFF5C7A</color>
+    <color name="muscle_other">#A5A1B8</color>
+
+    <!-- Backwards-compatible aliases (legacy code still references these) -->
+    <color name="category_back">@color/muscle_back</color>
+    <color name="category_cardio">@color/muscle_cardio</color>
+    <color name="category_chest">@color/muscle_chest</color>
+    <color name="category_lower_arms">@color/muscle_arms</color>
+    <color name="category_lower_legs">@color/muscle_legs</color>
+    <color name="category_neck">@color/muscle_other</color>
+    <color name="category_shoulders">@color/muscle_arms</color>
+    <color name="category_upper_arms">@color/muscle_arms</color>
+    <color name="category_upper_legs">@color/muscle_legs</color>
+    <color name="category_waist">@color/muscle_abs</color>
+    <color name="category_other">@color/muscle_other</color>
+
+    <!-- Profile hero card palette (legacy aliases kept for fragment_profile.xml) -->
+    <color name="profile_card_surface">@color/surface_dark_variant</color>
+    <color name="profile_card_border">#332D55</color>
+    <color name="profile_divider">#1F1F2E</color>
+
+    <color name="profile_text_primary">@color/on_surface_dark</color>
+    <color name="profile_text_secondary">@color/on_surface_dark_variant</color>
+    <color name="profile_text_tertiary">@color/on_surface_dark_muted</color>
+
+    <color name="profile_accent">@color/brand_primary_400</color>
+    <color name="profile_accent_soft">#664E3BB8</color>
+    <color name="profile_badge_border">#66FFFFFF</color>
+    <color name="profile_on_accent">#0B0715</color>
+
+    <!-- Weekly plan card (legacy aliases kept for fragment_home.xml) -->
+    <color name="weekly_plan_card_bg">@color/surface_dark_variant</color>
+    <color name="weekly_plan_card_stroke">@color/outline_dark</color>
+    <color name="weekly_plan_card_text_primary">@color/on_surface_dark</color>
+    <color name="weekly_plan_card_text_secondary">@color/on_surface_dark_variant</color>
+
+    <!-- Camera HUD overlays -->
+    <color name="hud_scrim_top">#CC000000</color>
+    <color name="hud_scrim_bottom">#E60B0B14</color>
+    <color name="hud_glass">#3D181826</color>
+    <color name="hud_glass_stroke">#332D55</color>
+
+</resources>

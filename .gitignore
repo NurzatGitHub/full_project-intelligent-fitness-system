@@ -1,0 +1,64 @@
+# ============================================================
+#  ROOT .gitignore for full_project (backend + mobile)
+# ============================================================
+
+# ---------- Secrets (НИКОГДА не коммитить) ----------
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+secrets.json
+*.pem
+*.key
+*.keystore
+*.jks
+google-services.json
+local.properties
+
+# ---------- Python / Django ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+*.sqlite3
+*.db
+*.log
+db.sqlite3
+db.sqlite3-journal
+
+# Django collected static (генерируется на сервере)
+staticfiles/
+# Загруженные пользовательские файлы оставляем локально
+media/
+
+# ---------- Android / Gradle ----------
+**/.gradle/
+**/build/
+**/.idea/
+**/.cxx/
+**/.externalNativeBuild/
+**/captures/
+**/*.iml
+**/local.properties
+
+# ---------- OS / Editors ----------
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# ---------- Models / большие бинарники (опционально) ----------
+# Если ONNX/TFLite модели уже в Git LFS — оставь.
+# Если просто большие — раскомментируй:
+# *.onnx
+# *.tflite
+# *.pt
