@@ -26,13 +26,16 @@ object RetrofitClient {
      */
     private const val LOCAL_LAN_URL = "http://192.168.0.12:8000/"
     private const val LOCAL_EMULATOR_URL = "http://10.0.2.2:8000/"
-    private const val PROD_URL = "https://intelligent-fitness-system.onrender.com/"
+    private const val PROD_URL = "https://fitness-coach-ai-z10u.onrender.com/"
 
-    /** Flip to false when running inside the Android Studio emulator. */
+    // true = Render, false = local
+    private const val USE_PROD = true
+
+    // only used when USE_PROD = false
     private const val USE_LAN = true
 
     val BASE_URL: String = when {
-        !BuildConfig.DEBUG -> PROD_URL
+        USE_PROD -> PROD_URL
         USE_LAN -> LOCAL_LAN_URL
         else -> LOCAL_EMULATOR_URL
     }
