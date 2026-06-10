@@ -87,6 +87,19 @@ class AuthActivity : AppCompatActivity() {
 
         btnContinueAsGuest.setOnClickListener {
             HomeFragment.clearCache()
+
+            // CRITICAL: also wipe the encrypted TokenStore. Otherwise the
+            // previous logged-in user's JWT survives, and ProfileFragment
+            // fetches THEIR profile from the server while the UI thinks
+            // we're a guest. That's how "Azamat" leaked into guest mode.
+            com.example.fitnesscoachai.data.api.RetrofitClient
+                .tokenStore()
+                .clear()
+
+            // Wipe cached profile crumbs for any previous user_id so the
+            // guest profile doesn't inherit age/weight/limitations.
+            getSharedPreferences("user_profile", MODE_PRIVATE).edit().clear().apply()
+
             getSharedPreferences("auth", MODE_PRIVATE).edit()
                 .putBoolean("isLoggedIn", true)
                 .putBoolean("isGuest", true)

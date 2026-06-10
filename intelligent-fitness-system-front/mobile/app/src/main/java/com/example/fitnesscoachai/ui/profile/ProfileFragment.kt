@@ -105,6 +105,17 @@ class ProfileFragment : Fragment() {
         }
 
         view.findViewById<MaterialButton>(R.id.btnEditProfile).setOnClickListener {
+            if (isGuestMode()) {
+                // Guests have no server account, so editing prefs is pointless.
+                // Send them to sign-in instead.
+                Toast.makeText(
+                    requireContext(),
+                    "Please sign in to edit your profile",
+                    Toast.LENGTH_SHORT
+                ).show()
+                startActivity(Intent(requireContext(), AuthActivity::class.java))
+                return@setOnClickListener
+            }
             showEditProfileDialog()
         }
     }
@@ -178,7 +189,16 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    private fun isGuestMode(): Boolean {
+        return getAuthPrefs().getBoolean("isGuest", false)
+    }
+
     private fun fetchProfileFromServer() {
+        // Guests have no account on the server — don't hit /me or the response
+        // could carry stale data from a previous logged-in session and clobber
+        // the guest placeholder.
+        if (isGuestMode()) return
+
         val token = getAccessToken() ?: return
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -231,6 +251,14 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadCachedProfile(view: View) {
+        // Guests are not real accounts — render an empty placeholder profile
+        // instead of reading SharedPreferences, which could still carry
+        // leftover keys from a previous logged-in session.
+        if (isGuestMode()) {
+            updateProfileUI(view, buildGuestPlaceholder())
+            return
+        }
+
         val authPrefs = getAuthPrefs()
         val profilePrefs = getProfilePrefs()
         val userId = getCurrentUserId()
@@ -238,7 +266,7 @@ class ProfileFragment : Fragment() {
         val cachedUser = User(
             id = userId.coerceAtLeast(0),
             email = authPrefs.getString("user_email", "") ?: "",
-            username = authPrefs.getString("user_name", "Azamat") ?: "Azamat",
+            username = authPrefs.getString("user_name", "Athlete") ?: "Athlete",
             age = profilePrefs.getInt("age_$userId", 25),
             weight = profilePrefs.getFloat("weight_$userId", 75f),
             height = profilePrefs.getFloat("height_$userId", 180f),
@@ -256,34 +284,69 @@ class ProfileFragment : Fragment() {
         updateProfileUI(view, cachedUser)
     }
 
+    /**
+     * Placeholder profile used while the user is in guest mode. All fields are
+     * empty so updateProfileUI shows clean "Not specified" / "No goal set yet"
+     * defaults, never another user's leaked data.
+     */
+    private fun buildGuestPlaceholder(): User {
+        return User(
+            id = 0,
+            email = "",
+            username = "Guest",
+            age = null,
+            weight = null,
+            height = null,
+            fitness_level = "",
+            goal = "",
+            limitations = "",
+            frequency = "",
+            workout_duration = "",
+            workout_place = "",
+            endurance_level = "",
+            gender = "",
+            profile_picture_url = null,
+        )
+    }
+
     private fun updateProfileUI(view: View, user: User) {
         val settingsPrefs =
             requireContext().getSharedPreferences("app_settings", AppCompatActivity.MODE_PRIVATE)
         val units = settingsPrefs.getString("units", "kg / cm") ?: "kg / cm"
 
-        val userName = user.username.ifBlank { "User" }
+        val guest = isGuestMode()
+
+        val userName = user.username.ifBlank { if (guest) "Guest" else "User" }
         val levelText = formatFitnessLevel(user.fitness_level)
         val goalText = user.goal.ifBlank { "No goal set yet" }
-        val subtitle = if (levelText.isNotBlank()) "Fitness Level: $levelText" else "Fitness Profile"
+        val subtitle = when {
+            guest -> "Sign in to personalize"
+            levelText.isNotBlank() -> "Fitness Level: $levelText"
+            else -> "Fitness Profile"
+        }
 
         view.findViewById<TextView>(R.id.tvUserName).text = userName
         view.findViewById<TextView>(R.id.tvUserSubtitle).text = subtitle
-        view.findViewById<TextView>(R.id.tvProfileGoal).text = "Goal: $goalText"
+        view.findViewById<TextView>(R.id.tvProfileGoal).text =
+            if (guest) "Goal: Sign in to set" else "Goal: $goalText"
 
         val ivAvatar = view.findViewById<ImageView>(R.id.ivAvatar)
         val localAvatarUri = getProfilePrefs().getString(getAvatarUriKey(), null)
         applyAvatarSafely(ivAvatar, localAvatarUri)
 
         view.findViewById<TextView>(R.id.tvAge).text =
-            (user.age ?: 25).toString()
+            user.age?.toString() ?: if (guest) "—" else "25"
 
         view.findViewById<TextView>(R.id.tvGender).text =
-            user.gender.ifBlank { "Not specified" }
+            user.gender.ifBlank { if (guest) "—" else "Not specified" }
 
-        val weightKg = user.weight ?: 75f
-        val heightCm = user.height ?: 180f
+        val weightKg = user.weight
+        val heightCm = user.height
 
-        if (units == "lb / ft") {
+        if (weightKg == null || heightCm == null) {
+            view.findViewById<TextView>(R.id.tvWeight).text = if (guest) "—" else "Not specified"
+            view.findViewById<TextView>(R.id.tvHeight).text = if (guest) "—" else "Not specified"
+        } else if (units == "lb / ft") {
             val weightLb = weightKg * 2.20462f
             val totalInches = heightCm / 2.54f
             val feet = (totalInches / 12f).toInt()
@@ -297,13 +360,13 @@ class ProfileFragment : Fragment() {
         }
 
         view.findViewById<TextView>(R.id.tvTrainingFrequency).text =
-            user.frequency.ifBlank { "Not specified" }
+            user.frequency.ifBlank { if (guest) "—" else "Not specified" }
 
         view.findViewById<TextView>(R.id.tvWorkoutDuration).text =
-            user.workout_duration.ifBlank { "Not specified" }
+            user.workout_duration.ifBlank { if (guest) "—" else "Not specified" }
 
         view.findViewById<TextView>(R.id.tvLimitations).text =
-            user.limitations.ifBlank { "No Limitations" }
+            user.limitations.ifBlank { if (guest) "—" else "No Limitations" }
     }
 
     private fun formatFitnessLevel(level: String?): String {
@@ -588,7 +651,7 @@ class ProfileFragment : Fragment() {
             layoutParams = fieldParams
             isErrorEnabled = true
             addView(TextInputEditText(ctx).apply {
-                setText(authPrefs.getString("user_name", "Azamat") ?: "Azamat")
+                setText(authPrefs.getString("user_name", "") ?: "")
             })
         }
         val etName = tilName.editText!!
