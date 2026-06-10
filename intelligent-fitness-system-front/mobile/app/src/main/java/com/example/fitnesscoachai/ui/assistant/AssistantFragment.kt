@@ -1,5 +1,6 @@
 package com.example.fitnesscoachai.ui.assistant
 
+import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
@@ -25,6 +26,14 @@ class AssistantFragment : Fragment(R.layout.fragment_assistant) {
 
     private var bottomNavigation: BottomNavigationView? = null
     private var historyLoaded = false
+
+    /**
+     * The user_id whose chat history is currently sitting in the ViewModel.
+     * -1 means "guest / nobody". When this differs from the current auth pref
+     * on the next onResume, we know there was a logout/login transition and
+     * we must clear in-memory bubbles before re-loading.
+     */
+    private var loadedForUserId: Int = -1
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -126,10 +135,25 @@ class AssistantFragment : Fragment(R.layout.fragment_assistant) {
 
     override fun onResume() {
         super.onResume()
-        // Lazy-load history once per fragment lifecycle. Reset on logout
-        // happens elsewhere by recreating the fragment.
-        if (!historyLoaded && !RetrofitClient.tokenStore().accessToken.isNullOrBlank()) {
+
+        val token = RetrofitClient.tokenStore().accessToken
+        val currentUserId = requireContext()
+            .getSharedPreferences("auth", Context.MODE_PRIVATE)
+            .getInt("user_id", -1)
+
+        // Detect user-change since the last time we loaded history (e.g. the
+        // user logged out and a different account logged in). If the active
+        // identity changed, drop the in-memory bubbles immediately so the
+        // new user doesn't briefly see the old user's chat.
+        if (historyLoaded && currentUserId != loadedForUserId) {
+            vm.clearInMemory()
+            historyLoaded = false
+        }
+
+        // Lazy-load: only pull /chat/messages once per user identity.
+        if (!historyLoaded && !token.isNullOrBlank() && currentUserId > 0) {
             historyLoaded = true
+            loadedForUserId = currentUserId
             vm.loadHistory()
         }
     }

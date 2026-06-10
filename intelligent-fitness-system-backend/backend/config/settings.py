@@ -23,9 +23,14 @@ if not DEBUG and SECRET_KEY.startswith("django-insecure"):
         "Set a strong SECRET_KEY before deploying with DEBUG=False."
     )
 
+# Tight by default — accept the exact production host plus localhost for dev.
+# To override (e.g. for a different Render subdomain), set the ALLOWED_HOSTS
+# env var on Render to a comma-separated list of explicit hostnames. Avoid
+# wildcard ".onrender.com" because that lets ANY render-hosted attacker
+# resolve a hostname-based attack against this app.
 ALLOWED_HOSTS = env_list(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,.onrender.com"
+    "localhost,127.0.0.1,fitness-coach-ai-z10u.onrender.com"
 )
 
 INSTALLED_APPS = [

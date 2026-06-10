@@ -522,24 +522,42 @@ class HomeFragment : Fragment() {
     private fun loadOverallStatus(view: View) {
         val isGuest = getAuthPrefs().getBoolean("isGuest", false)
 
-        // Counter is user-scoped (history_count_<userId> / _guest), so it
-        // resets correctly when a different user signs in.
-        val historyCount = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+        // 1) Render immediately from the on-device cache so the UI doesn't flash.
+        val localCount = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
             .getCount(requireContext())
+        renderStats(view, localCount, isGuest)
 
+        // 2) For logged-in users, ask the server for the authoritative count.
+        // DRF PageNumberPagination ships a `count` field in every page, so we
+        // request page_size=1 — cheap call, full count, no extra payload.
+        if (isGuest) return
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val resp = RetrofitClient.apiService.getWorkoutHistory(page = 1, pageSize = 1)
+                if (resp.isSuccessful) {
+                    val serverCount = resp.body()?.count
+                    if (serverCount != null && serverCount > localCount) {
+                        // Server saw more sessions than this device (e.g. user
+                        // also trained on another phone). Trust the server and
+                        // re-render.
+                        renderStats(view, serverCount, isGuest = false)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(tag, "workout-history count failed (using local)", e)
+            }
+        }
+    }
+
+    private fun renderStats(view: View, count: Int, isGuest: Boolean) {
         val tvWorkouts = view.findViewById<TextView>(R.id.tvTotalWorkouts)
         val tvScore = view.findViewById<TextView>(R.id.tvAverageFormScore)
 
-        if (isGuest && historyCount == 0) {
-            // Guest with no on-device history: don't fake a 78% score either.
-            tvWorkouts?.text = "0"
-            tvScore?.text = "—"
-        } else {
-            tvWorkouts?.text = historyCount.toString()
-            // Placeholder form score until we wire per-rep AI scoring into
-            // the WorkoutSession backend. Hidden when there's no data.
-            val score = if (historyCount > 0) 78 else 0
-            tvScore?.text = if (historyCount > 0) "$score%" else "—"
-        }
+        tvWorkouts?.text = count.toString()
+        // Form-score is intentionally a dash. The backend doesn't compute a
+        // per-rep AI quality score yet, so showing "78%" would be inventing
+        // data. When the scoring pipeline lands we'll wire it in here.
+        tvScore?.text = "—"
     }
 }

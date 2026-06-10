@@ -185,4 +185,15 @@ class AssistantViewModel : ViewModel() {
             _typing.value = false
         }
     }
+
+    /**
+     * Clear in-memory chat WITHOUT touching the server. Used when we detect
+     * that the active user changed (logout/login) since the last time history
+     * was loaded — we don't want the new user to briefly see the old user's
+     * messages before the network reload finishes.
+     */
+    fun clearInMemory() {
+        _messages.value = listOf(GREETING)
+        _typing.value = false
+    }
 }

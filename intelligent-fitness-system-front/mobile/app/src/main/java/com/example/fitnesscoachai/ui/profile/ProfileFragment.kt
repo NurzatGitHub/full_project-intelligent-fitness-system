@@ -395,9 +395,11 @@ class ProfileFragment : Fragment() {
         }
         view.findViewById<TextView>(R.id.tvTotalReps).text = totalReps.toString()
 
-        val avgScore = if (historyCount > 0) 78 else 0
-        view.findViewById<TextView>(R.id.tvAvgFormScore).text = if (historyCount > 0) "$avgScore%" else "—"
-        view.findViewById<TextView>(R.id.tvStatFormValue).text = if (historyCount > 0) "$avgScore%" else "—"
+        // Form score is not yet computed on the backend; we deliberately show
+        // a dash instead of inventing a number. Will be filled in once the
+        // per-rep AI quality scoring is added to WorkoutSession.
+        view.findViewById<TextView>(R.id.tvAvgFormScore).text = "—"
+        view.findViewById<TextView>(R.id.tvStatFormValue).text = "—"
 
         val streak = calculateStreak(workoutPrefs, historyCount)
         view.findViewById<TextView>(R.id.tvStatStreakValue).text = streak.toString()
@@ -477,8 +479,11 @@ class ProfileFragment : Fragment() {
         val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
         val historyCount = store.getCount(ctx)
 
+        // "Most common mistake" needs per-rep AI feedback aggregation, which
+        // we don't store yet. Keep honest: dash if no data, generic prompt
+        // otherwise. Hard-coded "Knees moving inward" was misleading.
         view.findViewById<TextView>(R.id.tvCommonMistake).text =
-            if (historyCount > 0) "Knees moving inward" else "No data yet"
+            if (historyCount > 0) "More data needed" else "No data yet"
 
         val exerciseCounts = mutableMapOf<String, Int>()
         for (i in 0 until historyCount) {
@@ -491,7 +496,10 @@ class ProfileFragment : Fragment() {
         view.findViewById<TextView>(R.id.tvBestExercise).text =
             exerciseCounts.maxByOrNull { it.value }?.key ?: "No data yet"
 
-        view.findViewById<TextView>(R.id.tvAIAccuracy).text = if (historyCount > 0) "92%" else "—"
+        // AI accuracy needs a separate evaluation pipeline (offline tests
+        // against labeled poses). Showing "92%" without that pipeline was
+        // fabricated. Dash until we plug real numbers in.
+        view.findViewById<TextView>(R.id.tvAIAccuracy).text = "—"
     }
 
     private fun loadRecentActivity(view: View) {
@@ -581,6 +589,16 @@ class ProfileFragment : Fragment() {
                 .edit()
                 .clear()
                 .apply()
+
+            // Symmetric with AuthActivity.btnContinueAsGuest: also wipe
+            // profile + workout-history prefs so a subsequent login can't
+            // inherit the logged-out user's age/weight/limitations or
+            // workout count.
+            requireActivity()
+                .getSharedPreferences("user_profile", AppCompatActivity.MODE_PRIVATE)
+                .edit().clear().apply()
+            com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+                .wipeAll(requireContext())
 
             startActivity(Intent(requireContext(), AuthActivity::class.java))
             requireActivity().finish()
