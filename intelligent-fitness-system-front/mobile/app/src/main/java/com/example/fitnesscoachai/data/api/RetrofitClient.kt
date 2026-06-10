@@ -24,21 +24,22 @@ object RetrofitClient {
      *
      *  • Release build: Render production.
      */
-    private const val LOCAL_LAN_URL = "http://192.168.0.12:8000/"
-    private const val LOCAL_EMULATOR_URL = "http://10.0.2.2:8000/"
+//    private const val LOCAL_LAN_URL = "http://192.168.0.12:8000/"
+//    private const val LOCAL_EMULATOR_URL = "http://10.0.2.2:8000/"
     private const val PROD_URL = "https://fitness-coach-ai-z10u.onrender.com/"
 
     // true = Render, false = local
-    private const val USE_PROD = true
-
-    // only used when USE_PROD = false
-    private const val USE_LAN = true
-
-    val BASE_URL: String = when {
-        USE_PROD -> PROD_URL
-        USE_LAN -> LOCAL_LAN_URL
-        else -> LOCAL_EMULATOR_URL
-    }
+//    private const val USE_PROD = true
+//
+//    // only used when USE_PROD = false
+//    private const val USE_LAN = true
+//
+//    val BASE_URL: String = when {
+//        USE_PROD -> PROD_URL
+//        USE_LAN -> LOCAL_LAN_URL
+//        else -> LOCAL_EMULATOR_URL
+//    }
+    val BASE_URL: String = PROD_URL
 
     private lateinit var appContext: Context
     private val tokenStore: TokenStore by lazy { TokenStore.get(appContext) }
@@ -52,13 +53,21 @@ object RetrofitClient {
             }
         }
 
+        // Render free tier hibernates the dyno after 15 min of idle and takes
+        // 30-60s to wake up. On top of that, Gemini weekly-plan generation can
+        // take another 15-30s. So the worst-case first request after sleep can
+        // legitimately need ~90s before the body starts flowing. We pick 120s
+        // to leave headroom; users still see a friendly retry on top of that.
         OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor(tokenStore))
             .authenticator(TokenAuthenticator(tokenStore, BASE_URL))
             .addInterceptor(logging)
-            .connectTimeout(60, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
+            .connectTimeout(120, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
+            .writeTimeout(120, TimeUnit.SECONDS)
+            // Keep TCP alive so cron-pings stay cheap and the same connection
+            // can be reused across user requests.
+            .retryOnConnectionFailure(true)
             .build()
     }
 

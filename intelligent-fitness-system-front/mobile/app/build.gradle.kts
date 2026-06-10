@@ -86,6 +86,9 @@ dependencies {
     // Encrypted SharedPreferences (token storage)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
+    // Pull-to-refresh on Home (so users can manually retry weekly plan)
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
     // Markwon — proper Markdown rendering for chat bubbles
     implementation("io.noties.markwon:core:4.6.2")
     implementation("io.noties.markwon:linkify:4.6.2")
