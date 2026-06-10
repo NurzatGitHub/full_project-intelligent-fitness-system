@@ -520,12 +520,26 @@ class HomeFragment : Fragment() {
     }
 
     private fun loadOverallStatus(view: View) {
-        val prefs = requireContext().getSharedPreferences("workout_history", Context.MODE_PRIVATE)
-        val historyCount = prefs.getInt("history_count", 0)
+        val isGuest = getAuthPrefs().getBoolean("isGuest", false)
 
-        view.findViewById<TextView>(R.id.tvTotalWorkouts)?.text = historyCount.toString()
+        // Counter is user-scoped (history_count_<userId> / _guest), so it
+        // resets correctly when a different user signs in.
+        val historyCount = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+            .getCount(requireContext())
 
-        val score = if (historyCount > 0) 78 else 0
-        view.findViewById<TextView>(R.id.tvAverageFormScore)?.text = "$score%"
+        val tvWorkouts = view.findViewById<TextView>(R.id.tvTotalWorkouts)
+        val tvScore = view.findViewById<TextView>(R.id.tvAverageFormScore)
+
+        if (isGuest && historyCount == 0) {
+            // Guest with no on-device history: don't fake a 78% score either.
+            tvWorkouts?.text = "0"
+            tvScore?.text = "—"
+        } else {
+            tvWorkouts?.text = historyCount.toString()
+            // Placeholder form score until we wire per-rep AI scoring into
+            // the WorkoutSession backend. Hidden when there's no data.
+            val score = if (historyCount > 0) 78 else 0
+            tvScore?.text = if (historyCount > 0) "$score%" else "—"
+        }
     }
 }

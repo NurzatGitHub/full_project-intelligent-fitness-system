@@ -381,21 +381,23 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadQuickStats(view: View) {
-        val workoutPrefs = requireContext().getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
-        val historyCount = workoutPrefs.getInt("history_count", 0)
+        val ctx = requireContext()
+        val workoutPrefs = ctx.getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
+        val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+        val historyCount = store.getCount(ctx)
 
         view.findViewById<TextView>(R.id.tvTotalWorkouts).text = historyCount.toString()
         view.findViewById<TextView>(R.id.tvStatWorkoutsValue).text = historyCount.toString()
 
         var totalReps = 0
         for (i in 0 until historyCount) {
-            totalReps += workoutPrefs.getInt("reps_$i", 0)
+            totalReps += workoutPrefs.getInt(store.repsKey(ctx, i), 0)
         }
         view.findViewById<TextView>(R.id.tvTotalReps).text = totalReps.toString()
 
         val avgScore = if (historyCount > 0) 78 else 0
-        view.findViewById<TextView>(R.id.tvAvgFormScore).text = "$avgScore%"
-        view.findViewById<TextView>(R.id.tvStatFormValue).text = "$avgScore%"
+        view.findViewById<TextView>(R.id.tvAvgFormScore).text = if (historyCount > 0) "$avgScore%" else "—"
+        view.findViewById<TextView>(R.id.tvStatFormValue).text = if (historyCount > 0) "$avgScore%" else "—"
 
         val streak = calculateStreak(workoutPrefs, historyCount)
         view.findViewById<TextView>(R.id.tvStatStreakValue).text = streak.toString()
@@ -405,8 +407,9 @@ class ProfileFragment : Fragment() {
         val llAchievements = view.findViewById<LinearLayout>(R.id.llAchievements)
         llAchievements.removeAllViews()
 
-        val workoutPrefs = requireContext().getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
-        val historyCount = workoutPrefs.getInt("history_count", 0)
+        val ctx = requireContext()
+        val workoutPrefs = ctx.getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
+        val historyCount = com.example.fitnesscoachai.data.local.WorkoutHistoryStore.getCount(ctx)
 
         val achievements = mutableListOf<String>()
         if (historyCount >= 1) achievements.add("First workout completed")
@@ -426,6 +429,8 @@ class ProfileFragment : Fragment() {
 
     private fun calculateStreak(prefs: android.content.SharedPreferences, historyCount: Int): Int {
         if (historyCount == 0) return 0
+        val ctx = requireContext()
+        val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
 
         val today = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
@@ -436,7 +441,7 @@ class ProfileFragment : Fragment() {
 
         val dates = mutableListOf<Long>()
         for (i in 0 until historyCount) {
-            val date = prefs.getLong("date_$i", 0)
+            val date = prefs.getLong(store.dateKey(ctx, i), 0)
             if (date > 0) dates.add(date)
         }
 
@@ -467,15 +472,17 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadTrainingInsights(view: View) {
-        val workoutPrefs = requireContext().getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
-        val historyCount = workoutPrefs.getInt("history_count", 0)
+        val ctx = requireContext()
+        val workoutPrefs = ctx.getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
+        val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+        val historyCount = store.getCount(ctx)
 
         view.findViewById<TextView>(R.id.tvCommonMistake).text =
             if (historyCount > 0) "Knees moving inward" else "No data yet"
 
         val exerciseCounts = mutableMapOf<String, Int>()
         for (i in 0 until historyCount) {
-            val exercise = workoutPrefs.getString("exercise_$i", null)
+            val exercise = workoutPrefs.getString(store.exerciseKey(ctx, i), null)
             if (exercise != null) {
                 exerciseCounts[exercise] = exerciseCounts.getOrDefault(exercise, 0) + 1
             }
@@ -484,15 +491,17 @@ class ProfileFragment : Fragment() {
         view.findViewById<TextView>(R.id.tvBestExercise).text =
             exerciseCounts.maxByOrNull { it.value }?.key ?: "No data yet"
 
-        view.findViewById<TextView>(R.id.tvAIAccuracy).text = "92%"
+        view.findViewById<TextView>(R.id.tvAIAccuracy).text = if (historyCount > 0) "92%" else "—"
     }
 
     private fun loadRecentActivity(view: View) {
         val llRecentWorkouts = view.findViewById<LinearLayout>(R.id.llRecentWorkouts)
         llRecentWorkouts.removeAllViews()
 
-        val workoutPrefs = requireContext().getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
-        val historyCount = workoutPrefs.getInt("history_count", 0)
+        val ctx = requireContext()
+        val workoutPrefs = ctx.getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
+        val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+        val historyCount = store.getCount(ctx)
 
         if (historyCount == 0) {
             llRecentWorkouts.addView(createSecondaryText("No workouts yet"))
@@ -501,9 +510,9 @@ class ProfileFragment : Fragment() {
 
         val workouts = mutableListOf<Triple<String, Int, Long>>()
         for (i in 0 until historyCount) {
-            val exercise = workoutPrefs.getString("exercise_$i", null)
-            val reps = workoutPrefs.getInt("reps_$i", 0)
-            val date = workoutPrefs.getLong("date_$i", 0)
+            val exercise = workoutPrefs.getString(store.exerciseKey(ctx, i), null)
+            val reps = workoutPrefs.getInt(store.repsKey(ctx, i), 0)
+            val date = workoutPrefs.getLong(store.dateKey(ctx, i), 0)
             if (exercise != null && date > 0) workouts.add(Triple(exercise, reps, date))
         }
 

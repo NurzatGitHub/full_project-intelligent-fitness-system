@@ -110,16 +110,11 @@ class SummaryActivity : AppCompatActivity() {
     }
 
     private fun saveWorkoutLocally(exerciseName: String, durationSec: Int, reps: Int) {
-        val prefs = getSharedPreferences("workout_history", MODE_PRIVATE)
-        val historyCount = prefs.getInt("history_count", 0)
-
-        prefs.edit()
-            .putString("exercise_$historyCount", exerciseName)
-            .putInt("duration_$historyCount", durationSec)
-            .putInt("reps_$historyCount", reps)
-            .putLong("date_$historyCount", System.currentTimeMillis())
-            .putInt("history_count", historyCount + 1)
-            .apply()
+        // User-scoped: switches between history_count_<userId> and
+        // history_count_guest under the hood so counters don't leak.
+        com.example.fitnesscoachai.data.local.WorkoutHistoryStore.appendSession(
+            this, exerciseName, durationSec, reps,
+        )
     }
 
     private fun sendWorkoutToBackend(exerciseName: String, durationSec: Int, reps: Int) {

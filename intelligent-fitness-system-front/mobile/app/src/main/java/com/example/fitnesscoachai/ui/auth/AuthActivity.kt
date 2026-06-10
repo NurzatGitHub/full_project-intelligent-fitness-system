@@ -100,6 +100,10 @@ class AuthActivity : AppCompatActivity() {
             // guest profile doesn't inherit age/weight/limitations.
             getSharedPreferences("user_profile", MODE_PRIVATE).edit().clear().apply()
 
+            // Same for workout history counters — otherwise the "This week"
+            // tile inherits the previous logged-in user's workout count.
+            com.example.fitnesscoachai.data.local.WorkoutHistoryStore.wipeAll(this)
+
             getSharedPreferences("auth", MODE_PRIVATE).edit()
                 .putBoolean("isLoggedIn", true)
                 .putBoolean("isGuest", true)

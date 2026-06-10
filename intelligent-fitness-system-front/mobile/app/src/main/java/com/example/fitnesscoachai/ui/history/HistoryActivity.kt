@@ -60,15 +60,16 @@ class HistoryActivity : AppCompatActivity() {
 
     private fun loadWorkoutHistory() {
         val prefs = getSharedPreferences("workout_history", MODE_PRIVATE)
-        val historyCount = prefs.getInt("history_count", 0)
+        val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+        val historyCount = store.getCount(this)
 
         val historyItems = mutableListOf<WorkoutHistoryItem>()
 
         for (i in 0 until historyCount) {
-            val exercise = prefs.getString("exercise_$i", null)
-            val duration = prefs.getInt("duration_$i", 0)
-            val reps = prefs.getInt("reps_$i", 0)
-            val date = prefs.getLong("date_$i", 0)
+            val exercise = prefs.getString(store.exerciseKey(this, i), null)
+            val duration = prefs.getInt(store.durationKey(this, i), 0)
+            val reps = prefs.getInt(store.repsKey(this, i), 0)
+            val date = prefs.getLong(store.dateKey(this, i), 0)
 
             if (exercise != null && date > 0) {
                 historyItems.add(WorkoutHistoryItem(exercise, reps, duration, date))
