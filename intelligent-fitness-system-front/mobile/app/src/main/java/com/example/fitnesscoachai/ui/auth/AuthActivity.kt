@@ -96,13 +96,12 @@ class AuthActivity : AppCompatActivity() {
                 .tokenStore()
                 .clear()
 
-            // Wipe cached profile crumbs for any previous user_id so the
-            // guest profile doesn't inherit age/weight/limitations.
-            getSharedPreferences("user_profile", MODE_PRIVATE).edit().clear().apply()
-
-            // Same for workout history counters — otherwise the "This week"
-            // tile inherits the previous logged-in user's workout count.
-            com.example.fitnesscoachai.data.local.WorkoutHistoryStore.wipeAll(this)
+            // NOTE: we no longer wipe `user_profile` or `workout_history`
+            // prefs here, because those are already user-scoped (keys like
+            // age_<userId>, history_count_<userId>, avatar_uri_<userId>).
+            // A guest reads guest-scoped keys, a logged-in user reads their
+            // own. Wiping them used to delete avatars on re-login, which is
+            // the actual bug we hit on the device.
 
             getSharedPreferences("auth", MODE_PRIVATE).edit()
                 .putBoolean("isLoggedIn", true)

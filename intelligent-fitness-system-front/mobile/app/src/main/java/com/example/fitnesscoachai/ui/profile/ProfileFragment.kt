@@ -629,15 +629,12 @@ class ProfileFragment : Fragment() {
                 .clear()
                 .apply()
 
-            // Symmetric with AuthActivity.btnContinueAsGuest: also wipe
-            // profile + workout-history prefs so a subsequent login can't
-            // inherit the logged-out user's age/weight/limitations or
-            // workout count.
-            requireActivity()
-                .getSharedPreferences("user_profile", AppCompatActivity.MODE_PRIVATE)
-                .edit().clear().apply()
-            com.example.fitnesscoachai.data.local.WorkoutHistoryStore
-                .wipeAll(requireContext())
+            // NOTE: we intentionally do NOT clear `user_profile` or
+            // `workout_history` prefs here. Those are already user-scoped
+            // (avatar_uri_<userId>, age_<userId>, history_count_<userId>),
+            // so a different user logging in reads their own data, and the
+            // same user logging back in keeps their avatar + workout history.
+            // Wiping them was deleting the avatar on every re-login.
 
             startActivity(Intent(requireContext(), AuthActivity::class.java))
             requireActivity().finish()

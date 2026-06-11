@@ -522,42 +522,59 @@ class HomeFragment : Fragment() {
     private fun loadOverallStatus(view: View) {
         val isGuest = getAuthPrefs().getBoolean("isGuest", false)
 
-        // 1) Render immediately from the on-device cache so the UI doesn't flash.
+        // 1) Instant render from the local cache so the tile never flashes.
         val localCount = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
             .getCount(requireContext())
-        renderStats(view, localCount, isGuest)
+        renderStats(view, localCount, formScorePercent = -1f)
 
-        // 2) For logged-in users, ask the server for the authoritative count.
-        // DRF PageNumberPagination ships a `count` field in every page, so we
-        // request page_size=1 — cheap call, full count, no extra payload.
         if (isGuest) return
 
+        // 2) Ask the server for the authoritative count + avg form score in
+        // parallel. We use page_size=1 on history because DRF's pagination
+        // already exposes the full count without sending all rows.
         viewLifecycleOwner.lifecycleScope.launch {
+            var serverCount: Int? = null
+            var serverFormScore: Float = -1f
+
             try {
                 val resp = RetrofitClient.apiService.getWorkoutHistory(page = 1, pageSize = 1)
                 if (resp.isSuccessful) {
-                    val serverCount = resp.body()?.count
-                    if (serverCount != null && serverCount > localCount) {
-                        // Server saw more sessions than this device (e.g. user
-                        // also trained on another phone). Trust the server and
-                        // re-render.
-                        renderStats(view, serverCount, isGuest = false)
+                    serverCount = resp.body()?.count
+                }
+            } catch (e: Exception) {
+                Log.w(tag, "workout-history count failed", e)
+            }
+
+            try {
+                val resp = RetrofitClient.apiService.getWorkoutStats()
+                if (resp.isSuccessful) {
+                    val body = resp.body()
+                    if (body != null && body.form_score_history.isNotEmpty()
+                        && body.average_form_score > 0f) {
+                        serverFormScore = body.average_form_score
                     }
                 }
             } catch (e: Exception) {
-                Log.w(tag, "workout-history count failed (using local)", e)
+                Log.w(tag, "workout-stats fetch failed", e)
             }
+
+            val finalCount = (serverCount ?: 0).coerceAtLeast(localCount)
+            renderStats(view, finalCount, serverFormScore)
         }
     }
 
-    private fun renderStats(view: View, count: Int, isGuest: Boolean) {
+    private fun renderStats(view: View, count: Int, formScorePercent: Float) {
         val tvWorkouts = view.findViewById<TextView>(R.id.tvTotalWorkouts)
         val tvScore = view.findViewById<TextView>(R.id.tvAverageFormScore)
 
         tvWorkouts?.text = count.toString()
-        // Form-score is intentionally a dash. The backend doesn't compute a
-        // per-rep AI quality score yet, so showing "78%" would be inventing
-        // data. When the scoring pipeline lands we'll wire it in here.
-        tvScore?.text = "—"
+
+        // Real avg from the backend. Stays as "—" until the user completes
+        // at least one workout with AI scoring active.
+        tvScore?.text = if (formScorePercent >= 0f) {
+            "${formScorePercent.toInt()}%"
+        } else {
+            "—"
+        }
     }
 }
