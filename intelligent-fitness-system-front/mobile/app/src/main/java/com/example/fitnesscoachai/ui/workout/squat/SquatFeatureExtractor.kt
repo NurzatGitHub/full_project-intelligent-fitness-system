@@ -11,7 +11,7 @@ object SquatFeatureExtractor {
     private const val VALID_KNEE_MIN = 20f
     private const val VALID_KNEE_MAX = 180f
     private const val VALID_TRUNK_MIN = 0.5f
-    private const val VALID_TRUNK_MAX = 45f
+    private const val VALID_TRUNK_MAX = 60f  // глубокий присед даёт наклон до 50-55°
 
     private fun angle(a: PosePoint, b: PosePoint, c: PosePoint): Float {
         val bax = a.x - b.x
