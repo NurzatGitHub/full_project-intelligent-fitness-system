@@ -118,6 +118,21 @@ class ProfileFragment : Fragment() {
             }
             showEditProfileDialog()
         }
+
+        // Form Stats card — opens the chart + zone-distribution screen.
+        view.findViewById<View>(R.id.cardViewFormStats)?.setOnClickListener {
+            if (isGuestMode()) {
+                Toast.makeText(
+                    requireContext(),
+                    "Sign in to see your form stats",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+            startActivity(
+                Intent(requireContext(), com.example.fitnesscoachai.ui.stats.StatsActivity::class.java)
+            )
+        }
     }
 
     private fun getAuthPrefs() =
@@ -395,14 +410,38 @@ class ProfileFragment : Fragment() {
         }
         view.findViewById<TextView>(R.id.tvTotalReps).text = totalReps.toString()
 
-        // Form score is not yet computed on the backend; we deliberately show
-        // a dash instead of inventing a number. Will be filled in once the
-        // per-rep AI quality scoring is added to WorkoutSession.
+        // Initial state: dash until the network call below replaces it. We
+        // ask the server because form score is computed across all devices,
+        // not from the on-device history slice.
         view.findViewById<TextView>(R.id.tvAvgFormScore).text = "—"
         view.findViewById<TextView>(R.id.tvStatFormValue).text = "—"
 
         val streak = calculateStreak(workoutPrefs, historyCount)
         view.findViewById<TextView>(R.id.tvStatStreakValue).text = streak.toString()
+
+        // Fetch the server-side avg_form_score. Guests don't have an account,
+        // so skip the request and leave the dash showing.
+        if (!isGuestMode()) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val response = com.example.fitnesscoachai.data.api.RetrofitClient
+                        .apiService.getWorkoutStats()
+                    if (response.isSuccessful) {
+                        val body = response.body() ?: return@launch
+                        val avg = body.average_form_score
+                        val scored = body.form_score_history.size
+                        if (scored > 0 && avg > 0f) {
+                            view.findViewById<TextView>(R.id.tvAvgFormScore)
+                                ?.text = "${avg.toInt()}%"
+                            view.findViewById<TextView>(R.id.tvStatFormValue)
+                                ?.text = "${avg.toInt()}%"
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(tag, "stats fetch failed in Profile", e)
+                }
+            }
+        }
     }
 
     private fun loadAchievements(view: View) {

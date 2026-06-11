@@ -116,6 +116,9 @@
         <activity
             android:name=".ui.legal.TermsActivity"
             android:exported="false" />
+        <activity
+            android:name=".ui.stats.StatsActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

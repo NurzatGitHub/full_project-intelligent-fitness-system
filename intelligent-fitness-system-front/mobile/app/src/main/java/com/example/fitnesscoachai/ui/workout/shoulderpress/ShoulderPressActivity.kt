@@ -61,6 +61,10 @@ class ShoulderPressActivity : AppCompatActivity() {
 
     private var repCount = 0
 
+    // Aggregates correct-vs-incorrect AI verdicts so we can ship a real
+    // avg_form_score to the backend instead of leaving Profile showing "—".
+    private val formScore = com.example.fitnesscoachai.ui.workout.shared.FormScoreTracker()
+
     private var phase = ShoulderPressPhase.UP
     private var downStreak = 0
     private var upStreak = 0
@@ -146,6 +150,7 @@ class ShoulderPressActivity : AppCompatActivity() {
         isWorkoutActive = true
         elapsedSeconds = 0
         repCount = 0
+        formScore.reset()
 
         downStreak = 0
         upStreak = 0
@@ -195,6 +200,8 @@ class ShoulderPressActivity : AppCompatActivity() {
             }
             putExtra("duration", elapsedSeconds.toInt())
             putExtra("reps", repCount)
+            // -1f when AI didn't produce any verdicts — Summary will skip it.
+            putExtra("form_score", formScore.percent())
         })
 
         finish()
@@ -296,6 +303,9 @@ class ShoulderPressActivity : AppCompatActivity() {
                         // не красим весь скелет в красный,
                         // чтобы сохранялась локальная подсветка ошибок
                         val canCountRep = prediction.label == "correct"
+
+                        // Feed verdict into the form-score aggregator.
+                        formScore.sample(prediction.label)
 
                         if (canCountRep) {
                             when (currentPhase) {

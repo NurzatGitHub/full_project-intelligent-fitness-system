@@ -51,6 +51,8 @@ class PushupActivity : AppCompatActivity() {
 
     private var repCount = 0
 
+    private val formScore = com.example.fitnesscoachai.ui.workout.shared.FormScoreTracker()
+
     private enum class PushupPhase { UP, DOWN }
 
     private var phase = PushupPhase.UP
@@ -137,6 +139,7 @@ class PushupActivity : AppCompatActivity() {
         readyStreak = 0
         isReady = false
         phase = PushupPhase.UP
+        formScore.reset()
 
         btnStartPause.text = "Pause"
 
@@ -173,6 +176,7 @@ class PushupActivity : AppCompatActivity() {
             }
             putExtra("duration", elapsedSeconds.toInt())
             putExtra("reps", repCount)
+            putExtra("form_score", formScore.percent())
         }
 
         startActivity(summaryIntent)
@@ -266,6 +270,9 @@ class PushupActivity : AppCompatActivity() {
                         if (prediction.label == "incorrect") {
                             segments = segments.map { it.copy(color = "#FF0000") }
                         }
+
+                        // Feed AI verdict into the form-score aggregator.
+                        formScore.sample(prediction.label)
 
                         val canCountRep =
                             bodyLine >= 150f && prediction.label == "correct"

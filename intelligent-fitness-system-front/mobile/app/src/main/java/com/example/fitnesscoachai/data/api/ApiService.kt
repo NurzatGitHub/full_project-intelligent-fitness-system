@@ -16,6 +16,7 @@ import com.example.fitnesscoachai.data.models.User
 import com.example.fitnesscoachai.data.models.WeeklyPlanResponse
 import com.example.fitnesscoachai.data.models.WorkoutHistoryPageResponse
 import com.example.fitnesscoachai.data.models.WorkoutSessionRequest
+import com.example.fitnesscoachai.data.models.WorkoutStatsResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -157,4 +158,7 @@ interface ApiService {
         @Query("page") page: Int = 1,
         @Query("page_size") pageSize: Int = 20,
     ): Response<WorkoutHistoryPageResponse>
+
+    @GET("api/workouts/stats/")
+    suspend fun getWorkoutStats(): Response<WorkoutStatsResponse>
 }
