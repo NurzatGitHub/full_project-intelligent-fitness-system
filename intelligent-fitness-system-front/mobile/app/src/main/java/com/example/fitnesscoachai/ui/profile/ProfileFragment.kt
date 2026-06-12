@@ -635,7 +635,10 @@ class ProfileFragment : Fragment() {
                 else -> dateFormat.format(Date(date))
             }
 
-            llRecentWorkouts.addView(createPrimaryListText("$exercise · $reps reps · $dateText"))
+            // Plank's "reps" is actually seconds-held — show the right unit
+            // so users don't see "Plank · 17 reps".
+            val unit = if (com.example.fitnesscoachai.ui.history.isIsometric(exercise)) "sec" else "reps"
+            llRecentWorkouts.addView(createPrimaryListText("$exercise · $reps $unit · $dateText"))
         }
 
         view.findViewById<MaterialButton>(R.id.btnViewFullHistory).setOnClickListener {
