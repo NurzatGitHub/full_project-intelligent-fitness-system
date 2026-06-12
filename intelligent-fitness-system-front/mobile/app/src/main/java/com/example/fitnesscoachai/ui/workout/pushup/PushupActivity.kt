@@ -59,8 +59,11 @@ class PushupActivity : AppCompatActivity() {
     private var downStreak = 0
     private var upStreak = 0
 
-    private val DOWN_T = 105f
-    private val UP_T = 145f
+    private val DOWN_T = 90f
+    private val UP_T = 140f
+
+    private val LABEL_BUF_SIZE = 5
+    private val labelBuffer = ArrayDeque<String>(LABEL_BUF_SIZE)
 
     private var readyStreak = 0
     private val READY_STREAK_NEED = 3
@@ -139,6 +142,7 @@ class PushupActivity : AppCompatActivity() {
         readyStreak = 0
         isReady = false
         phase = PushupPhase.UP
+        labelBuffer.clear()
         formScore.reset()
 
         btnStartPause.text = "Pause"
@@ -251,44 +255,51 @@ class PushupActivity : AppCompatActivity() {
                     }
 
                 } else {
-                    val features = PushupFeatureExtractor.extract(fixed)
+                    // Проверяем — человек ещё в позиции отжимания или встал?
+                    val stillInPosition = readyCheck.check(fixed).isReady
 
-                    if (features != null) {
-                        val minElbow = features[0]
-                        val bodyLine = features[2]
+                    if (!stillInPosition) {
+                        feedbackText = "Return to push-up position"
+                        segments = PoseSkeleton.segments.map { it.copy(color = "#FF0000") }
+                        downStreak = 0
+                        upStreak = 0
+                    } else {
+                        val features = PushupFeatureExtractor.extract(fixed)
 
-                        val prediction = pushupModel.predict(features)
-                        feedbackText = prediction.label
+                        if (features != null) {
+                            val minElbow = features[0]
 
-                        segments = PoseSkeleton.dynamic(
-                            leftElbow = features[4],
-                            rightElbow = features[5],
-                            bodyLine = features[2],
-                            hipOffset = features[6]
-                        )
+                            val prediction = pushupModel.predict(features)
 
-                        if (prediction.label == "incorrect") {
-                            segments = segments.map { it.copy(color = "#FF0000") }
-                        }
+                            if (labelBuffer.size >= LABEL_BUF_SIZE) labelBuffer.removeFirst()
+                            labelBuffer.addLast(prediction.label)
+                            val smoothedLabel =
+                                if (labelBuffer.count { it == "correct" } > labelBuffer.size / 2)
+                                    "correct" else "incorrect"
 
-                        // Feed AI verdict into the form-score aggregator.
-                        formScore.sample(prediction.label)
+                            feedbackText = smoothedLabel
+                            formScore.sample(smoothedLabel)
 
-                        val canCountRep =
-                            bodyLine >= 150f && prediction.label == "correct"
+                            segments = if (smoothedLabel == "correct") {
+                                PoseSkeleton.segments.map { it.copy(color = "#00FF00") }
+                            } else {
+                                PoseSkeleton.dynamic(
+                                    leftElbow = features[4],
+                                    rightElbow = features[5],
+                                    bodyLine = features[2],
+                                    hipOffset = features[6]
+                                )
+                            }
 
-                        if (canCountRep) {
                             when {
                                 minElbow < DOWN_T -> {
                                     downStreak++
                                     upStreak = 0
                                 }
-
                                 minElbow > UP_T -> {
                                     upStreak++
                                     downStreak = 0
                                 }
-
                                 else -> {
                                     downStreak = 0
                                     upStreak = 0
@@ -305,16 +316,13 @@ class PushupActivity : AppCompatActivity() {
                                 upStreak = 0
                                 repCount++
                             }
+
                         } else {
+                            feedbackText = "Show full body"
+                            segments = emptyList()
                             downStreak = 0
                             upStreak = 0
                         }
-
-                    } else {
-                        feedbackText = "Show full body"
-                        segments = emptyList()
-                        downStreak = 0
-                        upStreak = 0
                     }
                 }
 

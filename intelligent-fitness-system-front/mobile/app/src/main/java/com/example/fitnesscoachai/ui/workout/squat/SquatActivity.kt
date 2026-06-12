@@ -350,7 +350,7 @@ class SquatActivity : AppCompatActivity() {
         val fullStandingReturn =
             leftKnee > 163f &&
                     rightKnee > 163f &&
-                    trunkAngle < 23f &&
+                    trunkAngle < 30f &&
                     depthRatio < 0.82f &&
                     supportOk &&
                     symmetryOk
@@ -358,7 +358,7 @@ class SquatActivity : AppCompatActivity() {
         val almostStanding =
             leftKnee > 152f &&
                     rightKnee > 152f &&
-                    trunkAngle < 28f &&
+                    trunkAngle < 35f &&
                     supportOk &&
                     symmetryOk
 
@@ -366,7 +366,7 @@ class SquatActivity : AppCompatActivity() {
             leftKnee in 70f..138f &&
                     rightKnee in 70f..138f &&
                     depthRatio < 0.92f &&
-                    trunkAngle < 34f &&
+                    trunkAngle < 55f &&   // глубокий присед — наклон до 50°
                     supportOk &&
                     symmetryOk &&
                     kneeCaveRatio < 2.35f
@@ -374,7 +374,7 @@ class SquatActivity : AppCompatActivity() {
         val obviouslyInvalid =
             !supportOk ||
                     !symmetryOk ||
-                    trunkAngle > 40f ||
+                    trunkAngle > 58f ||   // только при очень сильном наклоне
                     kneeCaveRatio >= 2.75f ||
                     leftKnee < 50f ||
                     rightKnee < 50f
@@ -457,7 +457,7 @@ class SquatActivity : AppCompatActivity() {
         val feedback = when {
             !supportOk -> "Keep both feet grounded"
             kneeCaveRatio >= 2.35f -> "Keep your knees out"
-            trunkAngle >= 34f -> "Keep your chest up"
+            trunkAngle >= 55f -> "Keep your chest up"
             squatBottomValid -> "Good squat"
             fullStandingReturn -> "Ready"
             almostStanding -> "Stand fully upright"

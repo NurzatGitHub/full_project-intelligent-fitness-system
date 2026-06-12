@@ -214,9 +214,16 @@ class PlankActivity : AppCompatActivity() {
         val exerciseSlug = intent.getStringExtra("exercise_slug") ?: "plank"
         val weeklyPlanDayId = intent.getIntExtra("weekly_plan_day_id", -1)
 
-        val reps = if (holdSeconds > 0L) 1 else 0
+        // Plank is isometric — there are no real "reps", but we still want
+        // the workout to contribute something meaningful to the user's stats.
+        // We send the seconds-held as `reps` so:
+        //   * SummaryActivity can render it (with a "sec held" label since
+        //     we pass the is_isometric flag below)
+        //   * the backend's UserProgressSnapshot.total_reps still grows so
+        //     the user sees progress on the Profile / Stats screens
+        val holdReps = holdSeconds.toInt().coerceAtLeast(0)
 
-        Log.d(TAG, "finish: elapsed=$elapsedSeconds hold=$holdSeconds reps=$reps")
+        Log.d(TAG, "finish: elapsed=$elapsedSeconds hold=$holdSeconds")
 
         val summaryIntent = Intent(this, SummaryActivity::class.java).apply {
             putExtra("exercise_name", exerciseName)
@@ -225,7 +232,10 @@ class PlankActivity : AppCompatActivity() {
                 putExtra("weekly_plan_day_id", weeklyPlanDayId)
             }
             putExtra("duration", elapsedSeconds.toInt())
-            putExtra("reps", reps)
+            putExtra("reps", holdReps)
+            // Flag so SummaryActivity knows to render "X seconds held"
+            // instead of "X reps" for this isometric exercise.
+            putExtra("is_isometric", true)
         }
 
         startActivity(summaryIntent)

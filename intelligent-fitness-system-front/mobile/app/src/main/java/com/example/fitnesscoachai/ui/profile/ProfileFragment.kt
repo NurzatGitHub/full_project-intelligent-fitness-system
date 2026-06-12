@@ -401,6 +401,11 @@ class ProfileFragment : Fragment() {
         val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
         val historyCount = store.getCount(ctx)
 
+        // Local-first render: paint whatever this device has so the screen
+        // never shows zeros while the network call is in flight. The server
+        // response below will then overwrite these with authoritative values
+        // (which can be HIGHER than local — e.g. user trained on another
+        // device, or local cache was wiped on reinstall).
         view.findViewById<TextView>(R.id.tvTotalWorkouts).text = historyCount.toString()
         view.findViewById<TextView>(R.id.tvStatWorkoutsValue).text = historyCount.toString()
 
@@ -410,36 +415,49 @@ class ProfileFragment : Fragment() {
         }
         view.findViewById<TextView>(R.id.tvTotalReps).text = totalReps.toString()
 
-        // Initial state: dash until the network call below replaces it. We
-        // ask the server because form score is computed across all devices,
-        // not from the on-device history slice.
+        val localStreak = calculateStreak(workoutPrefs, historyCount)
+        view.findViewById<TextView>(R.id.tvStatStreakValue).text = localStreak.toString()
+
+        // Dashes for form score until the server tells us otherwise — we
+        // never want to fabricate a percentage from local data alone.
         view.findViewById<TextView>(R.id.tvAvgFormScore).text = "—"
         view.findViewById<TextView>(R.id.tvStatFormValue).text = "—"
 
-        val streak = calculateStreak(workoutPrefs, historyCount)
-        view.findViewById<TextView>(R.id.tvStatStreakValue).text = streak.toString()
+        // Guests don't have an account on the server.
+        if (isGuestMode()) return
 
-        // Fetch the server-side avg_form_score. Guests don't have an account,
-        // so skip the request and leave the dash showing.
-        if (!isGuestMode()) {
-            viewLifecycleOwner.lifecycleScope.launch {
-                try {
-                    val response = com.example.fitnesscoachai.data.api.RetrofitClient
-                        .apiService.getWorkoutStats()
-                    if (response.isSuccessful) {
-                        val body = response.body() ?: return@launch
-                        val avg = body.average_form_score
-                        val scored = body.form_score_history.size
-                        if (scored > 0 && avg > 0f) {
-                            view.findViewById<TextView>(R.id.tvAvgFormScore)
-                                ?.text = "${avg.toInt()}%"
-                            view.findViewById<TextView>(R.id.tvStatFormValue)
-                                ?.text = "${avg.toInt()}%"
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(tag, "stats fetch failed in Profile", e)
+        // Server is the source of truth for: total workouts, total reps,
+        // current streak, avg form score, best exercise. These come from
+        // /api/workouts/stats/ (UserProgressSnapshot on the backend) which
+        // aggregates across ALL of the user's devices.
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = com.example.fitnesscoachai.data.api.RetrofitClient
+                    .apiService.getWorkoutStats()
+                if (!response.isSuccessful) return@launch
+                val body = response.body() ?: return@launch
+
+                view.findViewById<TextView>(R.id.tvTotalWorkouts)
+                    ?.text = body.total_workouts.toString()
+                view.findViewById<TextView>(R.id.tvStatWorkoutsValue)
+                    ?.text = body.total_workouts.toString()
+
+                view.findViewById<TextView>(R.id.tvTotalReps)
+                    ?.text = body.total_reps.toString()
+
+                view.findViewById<TextView>(R.id.tvStatStreakValue)
+                    ?.text = body.current_streak.toString()
+
+                val avg = body.average_form_score
+                val scored = body.form_score_history.size
+                if (scored > 0 && avg > 0f) {
+                    view.findViewById<TextView>(R.id.tvAvgFormScore)
+                        ?.text = "${avg.toInt()}%"
+                    view.findViewById<TextView>(R.id.tvStatFormValue)
+                        ?.text = "${avg.toInt()}%"
                 }
+            } catch (e: Exception) {
+                Log.w(tag, "stats fetch failed in Profile", e)
             }
         }
     }
@@ -524,6 +542,7 @@ class ProfileFragment : Fragment() {
         view.findViewById<TextView>(R.id.tvCommonMistake).text =
             if (historyCount > 0) "More data needed" else "No data yet"
 
+        // Local-first: pick the most-counted exercise from this device.
         val exerciseCounts = mutableMapOf<String, Int>()
         for (i in 0 until historyCount) {
             val exercise = workoutPrefs.getString(store.exerciseKey(ctx, i), null)
@@ -531,14 +550,41 @@ class ProfileFragment : Fragment() {
                 exerciseCounts[exercise] = exerciseCounts.getOrDefault(exercise, 0) + 1
             }
         }
-
         view.findViewById<TextView>(R.id.tvBestExercise).text =
             exerciseCounts.maxByOrNull { it.value }?.key ?: "No data yet"
 
-        // AI accuracy needs a separate evaluation pipeline (offline tests
-        // against labeled poses). Showing "92%" without that pipeline was
-        // fabricated. Dash until we plug real numbers in.
+        // The view used to be "AI accuracy" with a fabricated 92%. We
+        // repurposed the label to "Avg reps" (per session) which is a real,
+        // honest derived metric: total_reps / total_workouts.
         view.findViewById<TextView>(R.id.tvAIAccuracy).text = "—"
+
+        // Pull server-side aggregates for best_exercise + avg reps per session.
+        if (!isGuestMode()) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val response = com.example.fitnesscoachai.data.api.RetrofitClient
+                        .apiService.getWorkoutStats()
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        if (body != null) {
+                            val best = body.best_exercise.trim()
+                            if (best.isNotBlank()) {
+                                view.findViewById<TextView>(R.id.tvBestExercise)?.text = best
+                            }
+                            if (body.total_workouts > 0) {
+                                val avgReps = (body.total_reps.toFloat() / body.total_workouts)
+                                    .toInt()
+                                    .coerceAtLeast(0)
+                                view.findViewById<TextView>(R.id.tvAIAccuracy)?.text =
+                                    avgReps.toString()
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(tag, "training-insights stats fetch failed", e)
+                }
+            }
+        }
     }
 
     private fun loadRecentActivity(view: View) {

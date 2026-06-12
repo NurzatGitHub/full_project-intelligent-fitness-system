@@ -35,6 +35,13 @@ class SummaryActivity : AppCompatActivity() {
     /** -1f means "no AI verdicts captured during this workout"; null on POST. */
     private var formScorePercent: Float = -1f
 
+    /**
+     * True when the finishing workout is isometric (plank etc). In that case
+     * the "reps" number is actually seconds-held, and we relabel the UI
+     * accordingly so the metric reads "12 seconds held" instead of "12 reps".
+     */
+    private var isIsometric: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_summary)
@@ -48,6 +55,11 @@ class SummaryActivity : AppCompatActivity() {
         val duration = intent.getIntExtra("duration", 0)
         val reps = intent.getIntExtra("reps", 0)
         formScorePercent = intent.getFloatExtra("form_score", -1f)
+        // Plank passes is_isometric=true; default false for everything else.
+        // We also treat the slug as a safety net in case some launch site
+        // forgot to set the flag.
+        isIsometric = intent.getBooleanExtra("is_isometric", false) ||
+            (exerciseSlug?.lowercase() == "plank")
 
         initializeViews()
         populateData(exerciseName, duration, reps)
@@ -68,6 +80,13 @@ class SummaryActivity : AppCompatActivity() {
     private fun populateData(exerciseName: String, duration: Int, reps: Int) {
         tvExerciseName.text = exerciseName
         tvTotalReps.text = reps.toString()
+
+        // Relabel the "Total reps" tile for isometric exercises (plank): the
+        // number coming in is actually seconds-held, not repetitions. The
+        // backend still receives it via `total_reps` for now (no separate
+        // hold_time column yet), but the UI no longer lies about it.
+        findViewById<TextView>(R.id.tvTotalRepsLabel)?.text =
+            if (isIsometric) "Seconds held" else "Total reps"
 
         val minutes = TimeUnit.SECONDS.toMinutes(duration.toLong())
         val seconds = duration % 60

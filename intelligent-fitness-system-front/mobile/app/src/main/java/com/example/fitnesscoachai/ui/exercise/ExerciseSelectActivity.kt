@@ -14,8 +14,6 @@ import com.example.fitnesscoachai.data.repo.ExerciseRepositoryLocal
 import com.example.fitnesscoachai.domain.model.Exercise
 import com.example.fitnesscoachai.domain.model.MainCategory
 import com.example.fitnesscoachai.ui.workout.plank.PlankActivity
-import com.example.fitnesscoachai.ui.workout.pushup.PushupActivity
-import com.example.fitnesscoachai.ui.workout.squat.SquatActivity
 import com.example.fitnesscoachai.ui.exercise.ExerciseRouter
 import kotlinx.coroutines.launch
 
