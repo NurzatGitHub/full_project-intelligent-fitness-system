@@ -32,6 +32,9 @@ class SummaryActivity : AppCompatActivity() {
     private var exerciseSlug: String? = null
     private var weeklyPlanDayId: Int? = null
 
+    /** -1f means "no AI verdicts captured during this workout"; null on POST. */
+    private var formScorePercent: Float = -1f
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_summary)
@@ -44,6 +47,7 @@ class SummaryActivity : AppCompatActivity() {
 
         val duration = intent.getIntExtra("duration", 0)
         val reps = intent.getIntExtra("reps", 0)
+        formScorePercent = intent.getFloatExtra("form_score", -1f)
 
         initializeViews()
         populateData(exerciseName, duration, reps)
@@ -71,11 +75,24 @@ class SummaryActivity : AppCompatActivity() {
 
         tvCommonMistakes.text = "Keep your back straight\nMaintain proper form"
 
-        val performance = when {
-            reps > 20 -> "Excellent"
-            reps > 10 -> "Good"
-            reps > 5 -> "Average"
-            else -> "Keep practicing"
+        // Overall performance now derives from the real form score when we
+        // have one, falling back to a rep-count heuristic when the AI didn't
+        // produce any verdicts (e.g. user out of frame the whole time).
+        val performance = if (formScorePercent >= 0f) {
+            val rounded = formScorePercent.toInt()
+            when {
+                rounded >= 85 -> "Excellent · $rounded%"
+                rounded >= 70 -> "Good · $rounded%"
+                rounded >= 50 -> "Average · $rounded%"
+                else -> "Needs work · $rounded%"
+            }
+        } else {
+            when {
+                reps > 20 -> "Excellent"
+                reps > 10 -> "Good"
+                reps > 5 -> "Average"
+                else -> "Keep practicing"
+            }
         }
         tvOverallPerformance.text = performance
     }
@@ -110,16 +127,11 @@ class SummaryActivity : AppCompatActivity() {
     }
 
     private fun saveWorkoutLocally(exerciseName: String, durationSec: Int, reps: Int) {
-        val prefs = getSharedPreferences("workout_history", MODE_PRIVATE)
-        val historyCount = prefs.getInt("history_count", 0)
-
-        prefs.edit()
-            .putString("exercise_$historyCount", exerciseName)
-            .putInt("duration_$historyCount", durationSec)
-            .putInt("reps_$historyCount", reps)
-            .putLong("date_$historyCount", System.currentTimeMillis())
-            .putInt("history_count", historyCount + 1)
-            .apply()
+        // User-scoped: switches between history_count_<userId> and
+        // history_count_guest under the hood so counters don't leak.
+        com.example.fitnesscoachai.data.local.WorkoutHistoryStore.appendSession(
+            this, exerciseName, durationSec, reps,
+        )
     }
 
     private fun sendWorkoutToBackend(exerciseName: String, durationSec: Int, reps: Int) {
@@ -133,17 +145,24 @@ class SummaryActivity : AppCompatActivity() {
             return
         }
 
+        // Only send the form score when the AI actually had something to
+        // score — otherwise pass null and let the backend treat the session
+        // as "unscored" so it doesn't pollute the avg with 0%.
+        val realFormScore: Float? = if (formScorePercent >= 0f) formScorePercent else null
+
         val request = WorkoutSessionRequest(
             title = exerciseName,
             weekly_plan_day_id = weeklyPlanDayId,
             total_duration_sec = durationSec,
             total_reps = reps,
+            avg_form_score = realFormScore,
             exercises = listOf(
                 WorkoutExerciseRequest(
                     exercise_slug = exerciseSlug,
                     exercise_name = exerciseName,
                     completed_reps = reps,
-                    duration_sec = durationSec
+                    duration_sec = durationSec,
+                    avg_form_score = realFormScore,
                 )
             )
         )

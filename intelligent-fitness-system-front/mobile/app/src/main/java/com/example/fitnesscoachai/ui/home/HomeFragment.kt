@@ -24,6 +24,7 @@ import com.example.fitnesscoachai.data.models.WeeklyPlanDay
 import com.example.fitnesscoachai.data.models.WeeklyPlanResponse
 import com.example.fitnesscoachai.domain.model.MainCategory
 import com.example.fitnesscoachai.ui.exercise.ExerciseListActivity
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.gson.Gson
@@ -67,12 +68,29 @@ class HomeFragment : Fragment() {
 
         bindUserHeader(view)
         setupProfileHeaderNavigation(view)
+        setupSwipeRefresh(view)
 
         setupCategoryRecyclerView(view)
         categoryAdapter.setCategories(MainCategory.entries)
 
         bindFromCacheOrLoad(view)
         loadOverallStatus(view)
+    }
+
+    private fun setupSwipeRefresh(view: View) {
+        val swipe = view.findViewById<SwipeRefreshLayout>(R.id.swipeRefreshHome) ?: return
+        // Brand colors so the spinner matches the design system.
+        swipe.setColorSchemeResources(
+            R.color.brand_primary_500,
+            R.color.brand_secondary_500,
+        )
+        swipe.setOnRefreshListener {
+            // Hard refresh: drop the cache so we definitely re-hit the backend
+            // even if the weekly plan was already cached.
+            clearCache()
+            loadWeeklyPlan(view)
+            loadOverallStatus(view)
+        }
     }
 
     override fun onHiddenChanged(hidden: Boolean) {
@@ -205,9 +223,12 @@ class HomeFragment : Fragment() {
             ?: prefs.getString("access_token", null)
         val currentUserId = prefs.getInt("user_id", -1)
 
+        val swipe = view.findViewById<SwipeRefreshLayout>(R.id.swipeRefreshHome)
+
         if (isGuest || token.isNullOrBlank()) {
             clearCache()
             showGuestPlan(view)
+            swipe?.isRefreshing = false
             return
         }
 
@@ -222,10 +243,14 @@ class HomeFragment : Fragment() {
                     cachedUserId = currentUserId
                     bindWeeklyPlan(view, plan)
                 } else {
+                    Log.w(tag, "weekly-plan HTTP ${response.code()} ${response.message()}")
                     showPlanError(view)
                 }
             } catch (e: Exception) {
+                Log.e(tag, "weekly-plan failed", e)
                 showPlanError(view)
+            } finally {
+                swipe?.isRefreshing = false
             }
         }
     }
@@ -260,15 +285,20 @@ class HomeFragment : Fragment() {
 
     private fun showPlanError(view: View) {
         view.findViewById<TextView>(R.id.tvAiPlanTitle)?.text = "AI Weekly Plan"
-        view.findViewById<TextView>(R.id.tvAiPlanSummary)?.text = "Could not load your plan right now"
+        view.findViewById<TextView>(R.id.tvAiPlanSummary)?.text =
+            "Couldn't reach the coach. Swipe down to retry."
         view.findViewById<TextView>(R.id.tvTodayPlan)?.text = buildTodayHeader()
-        view.findViewById<TextView>(R.id.tvTodayMeta)?.text = "Try reopening the app"
+        view.findViewById<TextView>(R.id.tvTodayMeta)?.text = "Pull to refresh"
 
         dayBindings(view).forEachIndexed { index, binding ->
             binding.label.text = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[index]
             binding.type.text = "-"
-            binding.title.text = "Error"
-            binding.card.setOnClickListener(null)
+            binding.title.text = "—"
+            binding.card.setOnClickListener {
+                // Tapping a card while in error state also retries.
+                clearCache()
+                loadWeeklyPlan(view)
+            }
         }
     }
 
@@ -490,12 +520,61 @@ class HomeFragment : Fragment() {
     }
 
     private fun loadOverallStatus(view: View) {
-        val prefs = requireContext().getSharedPreferences("workout_history", Context.MODE_PRIVATE)
-        val historyCount = prefs.getInt("history_count", 0)
+        val isGuest = getAuthPrefs().getBoolean("isGuest", false)
 
-        view.findViewById<TextView>(R.id.tvTotalWorkouts)?.text = historyCount.toString()
+        // 1) Instant render from the local cache so the tile never flashes.
+        val localCount = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+            .getCount(requireContext())
+        renderStats(view, localCount, formScorePercent = -1f)
 
-        val score = if (historyCount > 0) 78 else 0
-        view.findViewById<TextView>(R.id.tvAverageFormScore)?.text = "$score%"
+        if (isGuest) return
+
+        // 2) Ask the server for the authoritative count + avg form score in
+        // parallel. We use page_size=1 on history because DRF's pagination
+        // already exposes the full count without sending all rows.
+        viewLifecycleOwner.lifecycleScope.launch {
+            var serverCount: Int? = null
+            var serverFormScore: Float = -1f
+
+            try {
+                val resp = RetrofitClient.apiService.getWorkoutHistory(page = 1, pageSize = 1)
+                if (resp.isSuccessful) {
+                    serverCount = resp.body()?.count
+                }
+            } catch (e: Exception) {
+                Log.w(tag, "workout-history count failed", e)
+            }
+
+            try {
+                val resp = RetrofitClient.apiService.getWorkoutStats()
+                if (resp.isSuccessful) {
+                    val body = resp.body()
+                    if (body != null && body.form_score_history.isNotEmpty()
+                        && body.average_form_score > 0f) {
+                        serverFormScore = body.average_form_score
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(tag, "workout-stats fetch failed", e)
+            }
+
+            val finalCount = (serverCount ?: 0).coerceAtLeast(localCount)
+            renderStats(view, finalCount, serverFormScore)
+        }
+    }
+
+    private fun renderStats(view: View, count: Int, formScorePercent: Float) {
+        val tvWorkouts = view.findViewById<TextView>(R.id.tvTotalWorkouts)
+        val tvScore = view.findViewById<TextView>(R.id.tvAverageFormScore)
+
+        tvWorkouts?.text = count.toString()
+
+        // Real avg from the backend. Stays as "—" until the user completes
+        // at least one workout with AI scoring active.
+        tvScore?.text = if (formScorePercent >= 0f) {
+            "${formScorePercent.toInt()}%"
+        } else {
+            "—"
+        }
     }
 }

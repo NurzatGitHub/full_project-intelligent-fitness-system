@@ -4,7 +4,8 @@ data class WorkoutExerciseRequest(
     val exercise_slug: String?,
     val exercise_name: String?,
     val completed_reps: Int,
-    val duration_sec: Int
+    val duration_sec: Int,
+    val avg_form_score: Float? = null,
 )
 
 data class WorkoutSessionRequest(
@@ -12,5 +13,6 @@ data class WorkoutSessionRequest(
     val weekly_plan_day_id: Int? = null,
     val total_duration_sec: Int,
     val total_reps: Int,
-    val exercises: List<WorkoutExerciseRequest>
+    val avg_form_score: Float? = null,
+    val exercises: List<WorkoutExerciseRequest>,
 )

@@ -58,6 +58,8 @@ class SquatActivity : AppCompatActivity() {
     private var timer: CountDownTimer? = null
     private var repCount = 0
 
+    private val formScore = com.example.fitnesscoachai.ui.workout.shared.FormScoreTracker()
+
     private enum class SquatPhase { UP, DOWN }
 
     private var phase = SquatPhase.UP
@@ -170,6 +172,7 @@ class SquatActivity : AppCompatActivity() {
             }
             putExtra("duration", elapsedSeconds.toInt())
             putExtra("reps", repCount)
+            putExtra("form_score", formScore.percent())
         }
 
         startActivity(summaryIntent)
@@ -186,6 +189,7 @@ class SquatActivity : AppCompatActivity() {
         upStreak = 0
         reachedDepthInCurrentRep = false
         bottomHoldStreak = 0
+        formScore.reset()
 
         readyStreak = 0
         isReady = false
@@ -374,6 +378,11 @@ class SquatActivity : AppCompatActivity() {
                     kneeCaveRatio >= 2.75f ||
                     leftKnee < 50f ||
                     rightKnee < 50f
+
+        // Squat doesn't use an ML model — we derive a "correct" verdict from
+        // the geometric checks. A frame is correct when none of the obvious
+        // form violations fire (knee cave, trunk lean, foot lift, asymmetry).
+        formScore.sample(if (obviouslyInvalid) "incorrect" else "correct")
 
         if (obviouslyInvalid) {
             downStreak = 0

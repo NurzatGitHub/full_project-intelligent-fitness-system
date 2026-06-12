@@ -105,7 +105,33 @@ class ProfileFragment : Fragment() {
         }
 
         view.findViewById<MaterialButton>(R.id.btnEditProfile).setOnClickListener {
+            if (isGuestMode()) {
+                // Guests have no server account, so editing prefs is pointless.
+                // Send them to sign-in instead.
+                Toast.makeText(
+                    requireContext(),
+                    "Please sign in to edit your profile",
+                    Toast.LENGTH_SHORT
+                ).show()
+                startActivity(Intent(requireContext(), AuthActivity::class.java))
+                return@setOnClickListener
+            }
             showEditProfileDialog()
+        }
+
+        // Form Stats card — opens the chart + zone-distribution screen.
+        view.findViewById<View>(R.id.cardViewFormStats)?.setOnClickListener {
+            if (isGuestMode()) {
+                Toast.makeText(
+                    requireContext(),
+                    "Sign in to see your form stats",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@setOnClickListener
+            }
+            startActivity(
+                Intent(requireContext(), com.example.fitnesscoachai.ui.stats.StatsActivity::class.java)
+            )
         }
     }
 
@@ -178,7 +204,16 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    private fun isGuestMode(): Boolean {
+        return getAuthPrefs().getBoolean("isGuest", false)
+    }
+
     private fun fetchProfileFromServer() {
+        // Guests have no account on the server — don't hit /me or the response
+        // could carry stale data from a previous logged-in session and clobber
+        // the guest placeholder.
+        if (isGuestMode()) return
+
         val token = getAccessToken() ?: return
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -231,6 +266,14 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadCachedProfile(view: View) {
+        // Guests are not real accounts — render an empty placeholder profile
+        // instead of reading SharedPreferences, which could still carry
+        // leftover keys from a previous logged-in session.
+        if (isGuestMode()) {
+            updateProfileUI(view, buildGuestPlaceholder())
+            return
+        }
+
         val authPrefs = getAuthPrefs()
         val profilePrefs = getProfilePrefs()
         val userId = getCurrentUserId()
@@ -238,7 +281,7 @@ class ProfileFragment : Fragment() {
         val cachedUser = User(
             id = userId.coerceAtLeast(0),
             email = authPrefs.getString("user_email", "") ?: "",
-            username = authPrefs.getString("user_name", "Azamat") ?: "Azamat",
+            username = authPrefs.getString("user_name", "Athlete") ?: "Athlete",
             age = profilePrefs.getInt("age_$userId", 25),
             weight = profilePrefs.getFloat("weight_$userId", 75f),
             height = profilePrefs.getFloat("height_$userId", 180f),
@@ -256,34 +299,69 @@ class ProfileFragment : Fragment() {
         updateProfileUI(view, cachedUser)
     }
 
+    /**
+     * Placeholder profile used while the user is in guest mode. All fields are
+     * empty so updateProfileUI shows clean "Not specified" / "No goal set yet"
+     * defaults, never another user's leaked data.
+     */
+    private fun buildGuestPlaceholder(): User {
+        return User(
+            id = 0,
+            email = "",
+            username = "Guest",
+            age = null,
+            weight = null,
+            height = null,
+            fitness_level = "",
+            goal = "",
+            limitations = "",
+            frequency = "",
+            workout_duration = "",
+            workout_place = "",
+            endurance_level = "",
+            gender = "",
+            profile_picture_url = null,
+        )
+    }
+
     private fun updateProfileUI(view: View, user: User) {
         val settingsPrefs =
             requireContext().getSharedPreferences("app_settings", AppCompatActivity.MODE_PRIVATE)
         val units = settingsPrefs.getString("units", "kg / cm") ?: "kg / cm"
 
-        val userName = user.username.ifBlank { "User" }
+        val guest = isGuestMode()
+
+        val userName = user.username.ifBlank { if (guest) "Guest" else "User" }
         val levelText = formatFitnessLevel(user.fitness_level)
         val goalText = user.goal.ifBlank { "No goal set yet" }
-        val subtitle = if (levelText.isNotBlank()) "Fitness Level: $levelText" else "Fitness Profile"
+        val subtitle = when {
+            guest -> "Sign in to personalize"
+            levelText.isNotBlank() -> "Fitness Level: $levelText"
+            else -> "Fitness Profile"
+        }
 
         view.findViewById<TextView>(R.id.tvUserName).text = userName
         view.findViewById<TextView>(R.id.tvUserSubtitle).text = subtitle
-        view.findViewById<TextView>(R.id.tvProfileGoal).text = "Goal: $goalText"
+        view.findViewById<TextView>(R.id.tvProfileGoal).text =
+            if (guest) "Goal: Sign in to set" else "Goal: $goalText"
 
         val ivAvatar = view.findViewById<ImageView>(R.id.ivAvatar)
         val localAvatarUri = getProfilePrefs().getString(getAvatarUriKey(), null)
         applyAvatarSafely(ivAvatar, localAvatarUri)
 
         view.findViewById<TextView>(R.id.tvAge).text =
-            (user.age ?: 25).toString()
+            user.age?.toString() ?: if (guest) "—" else "25"
 
         view.findViewById<TextView>(R.id.tvGender).text =
-            user.gender.ifBlank { "Not specified" }
+            user.gender.ifBlank { if (guest) "—" else "Not specified" }
 
-        val weightKg = user.weight ?: 75f
-        val heightCm = user.height ?: 180f
+        val weightKg = user.weight
+        val heightCm = user.height
 
-        if (units == "lb / ft") {
+        if (weightKg == null || heightCm == null) {
+            view.findViewById<TextView>(R.id.tvWeight).text = if (guest) "—" else "Not specified"
+            view.findViewById<TextView>(R.id.tvHeight).text = if (guest) "—" else "Not specified"
+        } else if (units == "lb / ft") {
             val weightLb = weightKg * 2.20462f
             val totalInches = heightCm / 2.54f
             val feet = (totalInches / 12f).toInt()
@@ -297,13 +375,13 @@ class ProfileFragment : Fragment() {
         }
 
         view.findViewById<TextView>(R.id.tvTrainingFrequency).text =
-            user.frequency.ifBlank { "Not specified" }
+            user.frequency.ifBlank { if (guest) "—" else "Not specified" }
 
         view.findViewById<TextView>(R.id.tvWorkoutDuration).text =
-            user.workout_duration.ifBlank { "Not specified" }
+            user.workout_duration.ifBlank { if (guest) "—" else "Not specified" }
 
         view.findViewById<TextView>(R.id.tvLimitations).text =
-            user.limitations.ifBlank { "No Limitations" }
+            user.limitations.ifBlank { if (guest) "—" else "No Limitations" }
     }
 
     private fun formatFitnessLevel(level: String?): String {
@@ -318,32 +396,61 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadQuickStats(view: View) {
-        val workoutPrefs = requireContext().getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
-        val historyCount = workoutPrefs.getInt("history_count", 0)
+        val ctx = requireContext()
+        val workoutPrefs = ctx.getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
+        val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+        val historyCount = store.getCount(ctx)
 
         view.findViewById<TextView>(R.id.tvTotalWorkouts).text = historyCount.toString()
         view.findViewById<TextView>(R.id.tvStatWorkoutsValue).text = historyCount.toString()
 
         var totalReps = 0
         for (i in 0 until historyCount) {
-            totalReps += workoutPrefs.getInt("reps_$i", 0)
+            totalReps += workoutPrefs.getInt(store.repsKey(ctx, i), 0)
         }
         view.findViewById<TextView>(R.id.tvTotalReps).text = totalReps.toString()
 
-        val avgScore = if (historyCount > 0) 78 else 0
-        view.findViewById<TextView>(R.id.tvAvgFormScore).text = "$avgScore%"
-        view.findViewById<TextView>(R.id.tvStatFormValue).text = "$avgScore%"
+        // Initial state: dash until the network call below replaces it. We
+        // ask the server because form score is computed across all devices,
+        // not from the on-device history slice.
+        view.findViewById<TextView>(R.id.tvAvgFormScore).text = "—"
+        view.findViewById<TextView>(R.id.tvStatFormValue).text = "—"
 
         val streak = calculateStreak(workoutPrefs, historyCount)
         view.findViewById<TextView>(R.id.tvStatStreakValue).text = streak.toString()
+
+        // Fetch the server-side avg_form_score. Guests don't have an account,
+        // so skip the request and leave the dash showing.
+        if (!isGuestMode()) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val response = com.example.fitnesscoachai.data.api.RetrofitClient
+                        .apiService.getWorkoutStats()
+                    if (response.isSuccessful) {
+                        val body = response.body() ?: return@launch
+                        val avg = body.average_form_score
+                        val scored = body.form_score_history.size
+                        if (scored > 0 && avg > 0f) {
+                            view.findViewById<TextView>(R.id.tvAvgFormScore)
+                                ?.text = "${avg.toInt()}%"
+                            view.findViewById<TextView>(R.id.tvStatFormValue)
+                                ?.text = "${avg.toInt()}%"
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(tag, "stats fetch failed in Profile", e)
+                }
+            }
+        }
     }
 
     private fun loadAchievements(view: View) {
         val llAchievements = view.findViewById<LinearLayout>(R.id.llAchievements)
         llAchievements.removeAllViews()
 
-        val workoutPrefs = requireContext().getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
-        val historyCount = workoutPrefs.getInt("history_count", 0)
+        val ctx = requireContext()
+        val workoutPrefs = ctx.getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
+        val historyCount = com.example.fitnesscoachai.data.local.WorkoutHistoryStore.getCount(ctx)
 
         val achievements = mutableListOf<String>()
         if (historyCount >= 1) achievements.add("First workout completed")
@@ -363,6 +470,8 @@ class ProfileFragment : Fragment() {
 
     private fun calculateStreak(prefs: android.content.SharedPreferences, historyCount: Int): Int {
         if (historyCount == 0) return 0
+        val ctx = requireContext()
+        val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
 
         val today = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
@@ -373,7 +482,7 @@ class ProfileFragment : Fragment() {
 
         val dates = mutableListOf<Long>()
         for (i in 0 until historyCount) {
-            val date = prefs.getLong("date_$i", 0)
+            val date = prefs.getLong(store.dateKey(ctx, i), 0)
             if (date > 0) dates.add(date)
         }
 
@@ -404,15 +513,20 @@ class ProfileFragment : Fragment() {
     }
 
     private fun loadTrainingInsights(view: View) {
-        val workoutPrefs = requireContext().getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
-        val historyCount = workoutPrefs.getInt("history_count", 0)
+        val ctx = requireContext()
+        val workoutPrefs = ctx.getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
+        val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+        val historyCount = store.getCount(ctx)
 
+        // "Most common mistake" needs per-rep AI feedback aggregation, which
+        // we don't store yet. Keep honest: dash if no data, generic prompt
+        // otherwise. Hard-coded "Knees moving inward" was misleading.
         view.findViewById<TextView>(R.id.tvCommonMistake).text =
-            if (historyCount > 0) "Knees moving inward" else "No data yet"
+            if (historyCount > 0) "More data needed" else "No data yet"
 
         val exerciseCounts = mutableMapOf<String, Int>()
         for (i in 0 until historyCount) {
-            val exercise = workoutPrefs.getString("exercise_$i", null)
+            val exercise = workoutPrefs.getString(store.exerciseKey(ctx, i), null)
             if (exercise != null) {
                 exerciseCounts[exercise] = exerciseCounts.getOrDefault(exercise, 0) + 1
             }
@@ -421,15 +535,20 @@ class ProfileFragment : Fragment() {
         view.findViewById<TextView>(R.id.tvBestExercise).text =
             exerciseCounts.maxByOrNull { it.value }?.key ?: "No data yet"
 
-        view.findViewById<TextView>(R.id.tvAIAccuracy).text = "92%"
+        // AI accuracy needs a separate evaluation pipeline (offline tests
+        // against labeled poses). Showing "92%" without that pipeline was
+        // fabricated. Dash until we plug real numbers in.
+        view.findViewById<TextView>(R.id.tvAIAccuracy).text = "—"
     }
 
     private fun loadRecentActivity(view: View) {
         val llRecentWorkouts = view.findViewById<LinearLayout>(R.id.llRecentWorkouts)
         llRecentWorkouts.removeAllViews()
 
-        val workoutPrefs = requireContext().getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
-        val historyCount = workoutPrefs.getInt("history_count", 0)
+        val ctx = requireContext()
+        val workoutPrefs = ctx.getSharedPreferences("workout_history", AppCompatActivity.MODE_PRIVATE)
+        val store = com.example.fitnesscoachai.data.local.WorkoutHistoryStore
+        val historyCount = store.getCount(ctx)
 
         if (historyCount == 0) {
             llRecentWorkouts.addView(createSecondaryText("No workouts yet"))
@@ -438,9 +557,9 @@ class ProfileFragment : Fragment() {
 
         val workouts = mutableListOf<Triple<String, Int, Long>>()
         for (i in 0 until historyCount) {
-            val exercise = workoutPrefs.getString("exercise_$i", null)
-            val reps = workoutPrefs.getInt("reps_$i", 0)
-            val date = workoutPrefs.getLong("date_$i", 0)
+            val exercise = workoutPrefs.getString(store.exerciseKey(ctx, i), null)
+            val reps = workoutPrefs.getInt(store.repsKey(ctx, i), 0)
+            val date = workoutPrefs.getLong(store.dateKey(ctx, i), 0)
             if (exercise != null && date > 0) workouts.add(Triple(exercise, reps, date))
         }
 
@@ -509,6 +628,13 @@ class ProfileFragment : Fragment() {
                 .edit()
                 .clear()
                 .apply()
+
+            // NOTE: we intentionally do NOT clear `user_profile` or
+            // `workout_history` prefs here. Those are already user-scoped
+            // (avatar_uri_<userId>, age_<userId>, history_count_<userId>),
+            // so a different user logging in reads their own data, and the
+            // same user logging back in keeps their avatar + workout history.
+            // Wiping them was deleting the avatar on every re-login.
 
             startActivity(Intent(requireContext(), AuthActivity::class.java))
             requireActivity().finish()
@@ -588,7 +714,7 @@ class ProfileFragment : Fragment() {
             layoutParams = fieldParams
             isErrorEnabled = true
             addView(TextInputEditText(ctx).apply {
-                setText(authPrefs.getString("user_name", "Azamat") ?: "Azamat")
+                setText(authPrefs.getString("user_name", "") ?: "")
             })
         }
         val etName = tilName.editText!!

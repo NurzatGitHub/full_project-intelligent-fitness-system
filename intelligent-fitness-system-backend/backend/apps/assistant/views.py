@@ -364,6 +364,89 @@ def _normalize_plan(data: dict) -> dict:
     }
 
 
+def _generate_fallback_plan_data(user) -> dict:
+    """
+    Deterministic, always-succeeds weekly plan template used when Gemini is
+    unavailable (rate limited, 503, deadline exceeded, etc.). Personalized by
+    the user's declared training frequency so the result still feels relevant.
+
+    This MUST never raise: the whole point is to keep the home screen working
+    even when the AI provider is down.
+    """
+    # How many workout days based on the user's stated frequency.
+    raw_freq = str(getattr(user, "frequency", "") or "").strip().lower()
+    workout_days_count = 3  # safe default
+    for token in raw_freq.replace("-", " ").split():
+        try:
+            workout_days_count = int(token)
+            break
+        except ValueError:
+            continue
+    workout_days_count = max(1, min(workout_days_count, 6))
+
+    fitness_level = str(getattr(user, "fitness_level", "") or "").strip().lower()
+    if fitness_level == "beginner":
+        duration = 30
+    elif fitness_level == "advanced":
+        duration = 55
+    else:
+        duration = 40
+
+    # Pre-built workout titles that rotate through the week.
+    workout_pool = [
+        ("Upper Body", "Chest, shoulders, triceps"),
+        ("Lower Body", "Legs and glutes"),
+        ("Full Body", "Compound moves"),
+        ("Back + Biceps", "Pulling day"),
+        ("Core + Cardio", "Abs and conditioning"),
+        ("Push Day", "Chest and shoulders"),
+    ]
+
+    # Decide which weekday indices get workouts. Spread them so rest days are
+    # interleaved (e.g. for 3 workouts: Mon, Wed, Fri).
+    workout_indices = []
+    if workout_days_count <= 3:
+        workout_indices = [0, 2, 4][:workout_days_count]
+    elif workout_days_count == 4:
+        workout_indices = [0, 2, 4, 5]
+    elif workout_days_count == 5:
+        workout_indices = [0, 1, 3, 4, 5]
+    else:  # 6
+        workout_indices = [0, 1, 2, 3, 4, 5]
+
+    days = []
+    workout_cursor = 0
+    for i in range(7):
+        if i in workout_indices:
+            title, note = workout_pool[workout_cursor % len(workout_pool)]
+            workout_cursor += 1
+            days.append({
+                "day_key": DAY_KEYS[i],
+                "label": DAY_LABELS[i],
+                "type": "workout",
+                "title": title,
+                "duration_min": duration,
+                "note": note,
+            })
+        else:
+            days.append({
+                "day_key": DAY_KEYS[i],
+                "label": DAY_LABELS[i],
+                "type": "rest",
+                "title": "Recovery",
+                "duration_min": 15,
+                "note": "Stretch, hydrate, sleep well",
+            })
+
+    return {
+        "title": "AI Weekly Plan",
+        "goal_summary": "Balanced weekly training plan",
+        "today_tip": "Focus on form, breath, and full range of motion.",
+        "days": days,
+        "generated_at": datetime.now().isoformat(),
+    }
+
+
 def _is_transient_gemini_error(exc: Exception) -> bool:
     """503 UNAVAILABLE / 429 rate-limit / timeouts / empty responses are worth retrying."""
     msg = str(exc).upper()
@@ -501,14 +584,11 @@ def _generate_weekly_plan_data(user) -> dict:
 def _create_and_save_weekly_plan(user, plan_data: dict) -> WeeklyPlan:
     week_start = _get_current_week_start()
 
+    # Deactivate any other active plans for this user. With the partial unique
+    # constraint (is_active=True), only one ACTIVE plan per (user, week) can
+    # exist at a time. Older inactive duplicates on the same week are fine.
     WeeklyPlan.objects.filter(
         user=user,
-        is_active=True,
-    ).exclude(week_start_date=week_start).update(is_active=False)
-
-    WeeklyPlan.objects.filter(
-        user=user,
-        week_start_date=week_start,
         is_active=True,
     ).update(is_active=False)
 
@@ -571,7 +651,22 @@ def _get_or_create_current_week_plan(user) -> WeeklyPlan:
     if existing:
         return existing
 
-    plan_data = _generate_weekly_plan_data(user)
+    # Try Gemini first; if it fails (quota, 503, timeout, empty body), fall back
+    # to a deterministic template plan so the home screen ALWAYS gets something
+    # to render. We log the Gemini failure but don't propagate it — for the
+    # diploma project we strongly prefer "shows a default plan" over "infinite
+    # spinner / 502 error". The user can hit "Regenerate" to retry Gemini.
+    import logging
+    log = logging.getLogger(__name__)
+    try:
+        plan_data = _generate_weekly_plan_data(user)
+    except Exception as exc:
+        log.warning(
+            "weekly_plan: Gemini unavailable, using fallback template. cause=%s: %s",
+            type(exc).__name__, exc,
+        )
+        plan_data = _generate_fallback_plan_data(user)
+
     return _create_and_save_weekly_plan(user, plan_data)
 
 

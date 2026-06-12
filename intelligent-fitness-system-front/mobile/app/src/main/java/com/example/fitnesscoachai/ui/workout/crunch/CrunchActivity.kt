@@ -52,6 +52,8 @@ class CrunchActivity : AppCompatActivity() {
 
     private var repCount = 0
 
+    private val formScore = com.example.fitnesscoachai.ui.workout.shared.FormScoreTracker()
+
     private enum class CrunchPhase { UP, DOWN }
     private var phase = CrunchPhase.UP
 
@@ -156,6 +158,7 @@ class CrunchActivity : AppCompatActivity() {
         readyStreak = 0
         isReady = false
         waitingForFirstDown = true
+        formScore.reset()
 
         tvReps.text = "0"
         tvFeedback.text = "Get ready"
@@ -192,6 +195,7 @@ class CrunchActivity : AppCompatActivity() {
             if (weeklyPlanDayId > 0) putExtra("weekly_plan_day_id", weeklyPlanDayId)
             putExtra("duration", elapsedSeconds.toInt())
             putExtra("reps", repCount)
+            putExtra("form_score", formScore.percent())
         }
         startActivity(summaryIntent)
         finish()
@@ -278,6 +282,10 @@ class CrunchActivity : AppCompatActivity() {
                         val shoulderTilt = features[6]
 
                         val modelResult = crunchModel.predict(features)
+
+                        // Feed AI verdict into the form-score aggregator so
+                        // SummaryActivity can ship a real avg_form_score.
+                        formScore.sample(modelResult.label)
 
                         val isFlat = trunkAngle >= FLAT_T
                         val isUpEnough = trunkAngle >= UP_T

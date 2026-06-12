@@ -51,14 +51,16 @@ class PushupActivity : AppCompatActivity() {
 
     private var repCount = 0
 
+    private val formScore = com.example.fitnesscoachai.ui.workout.shared.FormScoreTracker()
+
     private enum class PushupPhase { UP, DOWN }
 
     private var phase = PushupPhase.UP
     private var downStreak = 0
     private var upStreak = 0
 
-    private val DOWN_T = 125f
-    private val UP_T = 150f
+    private val DOWN_T = 90f
+    private val UP_T = 140f
 
     private val LABEL_BUF_SIZE = 5
     private val labelBuffer = ArrayDeque<String>(LABEL_BUF_SIZE)
@@ -141,6 +143,7 @@ class PushupActivity : AppCompatActivity() {
         isReady = false
         phase = PushupPhase.UP
         labelBuffer.clear()
+        formScore.reset()
 
         btnStartPause.text = "Pause"
 
@@ -177,6 +180,7 @@ class PushupActivity : AppCompatActivity() {
             }
             putExtra("duration", elapsedSeconds.toInt())
             putExtra("reps", repCount)
+            putExtra("form_score", formScore.percent())
         }
 
         startActivity(summaryIntent)
@@ -255,9 +259,8 @@ class PushupActivity : AppCompatActivity() {
                     val stillInPosition = readyCheck.check(fixed).isReady
 
                     if (!stillInPosition) {
-                        // Человек встал — серый скелет + подсказка (без красного)
                         feedbackText = "Return to push-up position"
-                        segments = PoseSkeleton.segments.map { it.copy(color = "#AAAAAA") }
+                        segments = PoseSkeleton.segments.map { it.copy(color = "#FF0000") }
                         downStreak = 0
                         upStreak = 0
                     } else {
@@ -268,7 +271,6 @@ class PushupActivity : AppCompatActivity() {
 
                             val prediction = pushupModel.predict(features)
 
-                            // Сглаживание: голосование по последним 5 кадрам
                             if (labelBuffer.size >= LABEL_BUF_SIZE) labelBuffer.removeFirst()
                             labelBuffer.addLast(prediction.label)
                             val smoothedLabel =
@@ -276,19 +278,19 @@ class PushupActivity : AppCompatActivity() {
                                     "correct" else "incorrect"
 
                             feedbackText = smoothedLabel
+                            formScore.sample(smoothedLabel)
 
-                            segments = PoseSkeleton.dynamic(
-                                leftElbow = features[4],
-                                rightElbow = features[5],
-                                bodyLine = features[2],
-                                hipOffset = features[6]
-                            )
-
-                            if (smoothedLabel == "incorrect") {
-                                segments = segments.map { it.copy(color = "#FF0000") }
+                            segments = if (smoothedLabel == "correct") {
+                                PoseSkeleton.segments.map { it.copy(color = "#00FF00") }
+                            } else {
+                                PoseSkeleton.dynamic(
+                                    leftElbow = features[4],
+                                    rightElbow = features[5],
+                                    bodyLine = features[2],
+                                    hipOffset = features[6]
+                                )
                             }
 
-                            // Репы считаем ТОЛЬКО по углу локтя — независимо от лейбла формы
                             when {
                                 minElbow < DOWN_T -> {
                                     downStreak++

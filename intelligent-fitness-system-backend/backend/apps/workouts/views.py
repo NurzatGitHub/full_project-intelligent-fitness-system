@@ -228,5 +228,77 @@ def workout_history(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def workout_stats(request):
-    snapshot = _refresh_user_progress(request.user)
-    return Response(UserProgressSnapshotSerializer(snapshot).data)
+    """
+    Returns the user's progress snapshot PLUS extra series the mobile Stats
+    screen needs to render the form-score bar chart and the time-in-zone
+    distribution. Backwards-compatible: existing fields are unchanged, new
+    ones are additive.
+
+    Shape:
+        {
+          "total_workouts": 12,
+          "total_reps": 287,
+          "average_form_score": 81.4,
+          "current_streak": 3,
+          "best_exercise": "Push-up",
+          "last_workout_at": "...",
+          "updated_at": "...",
+
+          "form_score_history": [          // newest-last, last 20 sessions
+            {"date": "2026-06-08", "title": "Push-up", "form_score": 78.0},
+            ...
+          ],
+          "zone_distribution": {           // counts of sessions per quality bucket
+            "excellent": 4,                //  >= 85
+            "good":      5,                //  70-84
+            "average":   2,                //  50-69
+            "poor":      1                 //  < 50
+          }
+        }
+    """
+    user = request.user
+    snapshot = _refresh_user_progress(user)
+    base = UserProgressSnapshotSerializer(snapshot).data
+
+    # Pull the last 20 completed sessions with a non-null form score so the
+    # mobile chart can plot a meaningful trend without zeros polluting it.
+    recent = list(
+        WorkoutSession.objects
+        .filter(user=user, status="completed", avg_form_score__isnull=False)
+        .order_by("-finished_at", "-created_at")[:20]
+    )
+    recent.reverse()  # chronological so the chart draws left→right
+
+    base["form_score_history"] = [
+        {
+            "date": (
+                timezone.localtime(s.finished_at).date().isoformat()
+                if s.finished_at else None
+            ),
+            "title": s.title or "",
+            "form_score": round(float(s.avg_form_score or 0), 1),
+        }
+        for s in recent
+    ]
+
+    # Bucket every scored session into a quality zone. These thresholds match
+    # the colors we picked on the Android side (Excellent/Good/Average/Poor).
+    distribution = {"excellent": 0, "good": 0, "average": 0, "poor": 0}
+    all_scored = (
+        WorkoutSession.objects
+        .filter(user=user, status="completed", avg_form_score__isnull=False)
+        .values_list("avg_form_score", flat=True)
+    )
+    for score in all_scored:
+        s = float(score)
+        if s >= 85:
+            distribution["excellent"] += 1
+        elif s >= 70:
+            distribution["good"] += 1
+        elif s >= 50:
+            distribution["average"] += 1
+        else:
+            distribution["poor"] += 1
+    base["zone_distribution"] = distribution
+
+    return Response(base)

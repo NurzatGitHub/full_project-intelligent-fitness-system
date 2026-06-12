@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 
 
 class WeeklyPlan(models.Model):
@@ -24,8 +25,15 @@ class WeeklyPlan(models.Model):
     class Meta:
         ordering = ["-week_start_date", "-created_at"]
         constraints = [
+            # PARTIAL unique: only ONE active plan per (user, week) is allowed,
+            # but unlimited historical inactive plans are fine. The previous
+            # version (fields=[user, week_start_date, is_active]) forbade two
+            # inactive plans on the same week and caused IntegrityError when
+            # we deactivated an older active plan whose week already had an
+            # inactive twin.
             models.UniqueConstraint(
-                fields=["user", "week_start_date", "is_active"],
+                fields=["user", "week_start_date"],
+                condition=Q(is_active=True),
                 name="unique_active_weekly_plan_per_user_week",
             )
         ]
