@@ -630,7 +630,7 @@
                             style="@style/Pulse.Text.MetricLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="AI accuracy" />
+                            android:text="Avg reps" />
 
                         <TextView
                             android:id="@+id/tvAIAccuracy"
@@ -638,10 +638,10 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="—"
-                            android:textColor="@color/brand_secondary_500"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="18sp"
                             android:textStyle="bold"
-                            tools:text="94%" />
+                            tools:text="6" />
                     </LinearLayout>
 
                     <LinearLayout

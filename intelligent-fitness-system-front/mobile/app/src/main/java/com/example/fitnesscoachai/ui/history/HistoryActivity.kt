@@ -42,7 +42,8 @@ class HistoryActivity : AppCompatActivity() {
             // Tapping a history entry is read-only for now.
             // We do NOT relaunch SummaryActivity — that was confusing and
             // also broke the back stack (history → summary → history → ...).
-            val msg = "${item.exercise} · ${item.reps} reps"
+            val unit = if (isIsometric(item.exercise)) "sec" else "reps"
+            val msg = "${item.exercise} · ${item.reps} $unit"
             Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
 
@@ -89,6 +90,17 @@ class HistoryActivity : AppCompatActivity() {
     }
 }
 
+/**
+ * Returns true when the given exercise name corresponds to an isometric
+ * (hold-the-pose) exercise, where the "reps" field actually stores seconds.
+ * Centralized here so HistoryActivity, ProfileFragment, and the adapter all
+ * agree on the same rule.
+ */
+internal fun isIsometric(exerciseName: String): Boolean {
+    val n = exerciseName.lowercase(Locale.US)
+    return n.contains("plank")
+}
+
 class WorkoutHistoryAdapter(
     private val onItemClick: (WorkoutHistoryItem) -> Unit,
 ) : RecyclerView.Adapter<WorkoutHistoryAdapter.ViewHolder>() {
@@ -125,8 +137,14 @@ class WorkoutHistoryAdapter(
             tvDate.text = dateFormat.format(Date(item.date))
             tvExercise.text = item.exercise
 
-            // "12" looks nicer in the pill than "Reps: 12"
-            tvReps.text = "${item.reps} reps"
+            // For isometric exercises (plank) the "reps" int is actually
+            // seconds-held — relabel so the pill reads "30 sec" instead of
+            // the misleading "30 reps".
+            tvReps.text = if (isIsometric(item.exercise)) {
+                "${item.reps} sec"
+            } else {
+                "${item.reps} reps"
+            }
 
             val minutes = item.duration / 60
             val seconds = item.duration % 60

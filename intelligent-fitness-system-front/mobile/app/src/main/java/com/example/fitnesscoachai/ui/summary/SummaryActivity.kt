@@ -35,6 +35,19 @@ class SummaryActivity : AppCompatActivity() {
     /** -1f means "no AI verdicts captured during this workout"; null on POST. */
     private var formScorePercent: Float = -1f
 
+    /**
+     * True when the finishing workout is isometric (plank etc). In that case
+     * `holdSeconds` is what we display and store in local history; `reps`
+     * stays at 0 or 1 and is what we ship to the backend.
+     */
+    private var isIsometric: Boolean = false
+
+    /** Seconds the user held the pose. Only meaningful when isIsometric. */
+    private var holdSeconds: Int = 0
+
+    /** Backend rep count: 1 for completed plank, normal reps otherwise. */
+    private var backendReps: Int = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_summary)
@@ -46,11 +59,21 @@ class SummaryActivity : AppCompatActivity() {
         weeklyPlanDayId = if (rawPlanDayId > 0) rawPlanDayId else null
 
         val duration = intent.getIntExtra("duration", 0)
-        val reps = intent.getIntExtra("reps", 0)
+        backendReps = intent.getIntExtra("reps", 0)
+        holdSeconds = intent.getIntExtra("hold_seconds", 0)
         formScorePercent = intent.getFloatExtra("form_score", -1f)
+        // Plank passes is_isometric=true; default false for everything else.
+        // We also treat the slug as a safety net in case some launch site
+        // forgot to set the flag.
+        isIsometric = intent.getBooleanExtra("is_isometric", false) ||
+            (exerciseSlug?.lowercase() == "plank")
+
+        // For the UI / local history: show hold seconds for isometric,
+        // backend reps otherwise. The backend always receives `backendReps`.
+        val displayNumber = if (isIsometric) holdSeconds else backendReps
 
         initializeViews()
-        populateData(exerciseName, duration, reps)
+        populateData(exerciseName, duration, displayNumber)
         setupListeners()
     }
 
@@ -68,6 +91,13 @@ class SummaryActivity : AppCompatActivity() {
     private fun populateData(exerciseName: String, duration: Int, reps: Int) {
         tvExerciseName.text = exerciseName
         tvTotalReps.text = reps.toString()
+
+        // Relabel the "Total reps" tile for isometric exercises (plank): the
+        // number coming in is actually seconds-held, not repetitions. The
+        // backend still receives it via `total_reps` for now (no separate
+        // hold_time column yet), but the UI no longer lies about it.
+        findViewById<TextView>(R.id.tvTotalRepsLabel)?.text =
+            if (isIsometric) "Seconds held" else "Total reps"
 
         val minutes = TimeUnit.SECONDS.toMinutes(duration.toLong())
         val seconds = duration % 60
@@ -120,10 +150,16 @@ class SummaryActivity : AppCompatActivity() {
 
         val exerciseName = tvExerciseName.text.toString()
         val durationSec = getDurationInSeconds()
-        val reps = tvTotalReps.text.toString().toIntOrNull() ?: 0
 
-        saveWorkoutLocally(exerciseName, durationSec, reps)
-        sendWorkoutToBackend(exerciseName, durationSec, reps)
+        // Local history pill should read "33 sec" for plank → keep using the
+        // displayed number for it. The backend, however, must always receive
+        // the real rep count (1 for a completed plank, normal reps otherwise),
+        // otherwise total_reps balloons by dozens per isometric session.
+        val displayNumber = tvTotalReps.text.toString().toIntOrNull() ?: 0
+        val repsForBackend = if (isIsometric) backendReps else displayNumber
+
+        saveWorkoutLocally(exerciseName, durationSec, displayNumber)
+        sendWorkoutToBackend(exerciseName, durationSec, repsForBackend)
     }
 
     private fun saveWorkoutLocally(exerciseName: String, durationSec: Int, reps: Int) {

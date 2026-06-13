@@ -269,6 +269,29 @@ class PushupActivity : AppCompatActivity() {
                         if (features != null) {
                             val minElbow = features[0]
 
+                            // Проверка колени на земле: угол hip→knee→ankle
+                            val lHip = fixed[10]; val lKnee = fixed[12]; val lAnk = fixed[14]
+                            val rHip = fixed[11]; val rKnee = fixed[13]; val rAnk = fixed[15]
+                            fun kneeAngle(h: com.example.fitnesscoachai.ui.workout.shared.PosePoint,
+                                          k: com.example.fitnesscoachai.ui.workout.shared.PosePoint,
+                                          a: com.example.fitnesscoachai.ui.workout.shared.PosePoint): Float {
+                                val bax = h.x - k.x; val bay = h.y - k.y
+                                val bcx = a.x - k.x; val bcy = a.y - k.y
+                                val mag = kotlin.math.sqrt((bax*bax+bay*bay)*(bcx*bcx+bcy*bcy))
+                                if (mag < 1e-6f) return 180f
+                                return Math.toDegrees(kotlin.math.acos(((bax*bcx+bay*bcy)/mag).coerceIn(-1f,1f)).toDouble()).toFloat()
+                            }
+                            val leftKneeAngle = kneeAngle(lHip, lKnee, lAnk)
+                            val rightKneeAngle = kneeAngle(rHip, rKnee, rAnk)
+                            val kneesOnGround = leftKneeAngle < 150f || rightKneeAngle < 150f
+
+                            if (kneesOnGround) {
+                                feedbackText = "Keep knees off the ground"
+                                segments = PoseSkeleton.segments.map { it.copy(color = "#FF0000") }
+                                downStreak = 0
+                                upStreak = 0
+                            } else {
+
                             val prediction = pushupModel.predict(features)
 
                             if (labelBuffer.size >= LABEL_BUF_SIZE) labelBuffer.removeFirst()
@@ -316,6 +339,8 @@ class PushupActivity : AppCompatActivity() {
                                 upStreak = 0
                                 repCount++
                             }
+
+                            } // end kneesOnGround else
 
                         } else {
                             feedbackText = "Show full body"

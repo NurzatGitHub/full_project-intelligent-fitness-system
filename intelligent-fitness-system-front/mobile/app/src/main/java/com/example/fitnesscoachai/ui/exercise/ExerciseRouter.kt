@@ -5,9 +5,9 @@ import android.content.Intent
 import android.util.Log
 import com.example.fitnesscoachai.ui.workout.plank.PlankActivity
 import com.example.fitnesscoachai.ui.workout.shoulderpress.ShoulderPressActivity
-import com.example.fitnesscoachai.ui.workout.squat.SquatActivity
 import com.example.fitnesscoachai.ui.workout.crunch.CrunchActivity
 import com.example.fitnesscoachai.ui.workout.pushup.PushupActivity
+import com.example.fitnesscoachai.ui.workout.squat.SquatActivity
 import java.util.Locale
 
 object ExerciseRouter {
@@ -37,7 +37,7 @@ object ExerciseRouter {
                     slug == "push-up" ||
                     slug == "pushup" ||
                     slug.contains("push-up") ||
-                    slug.contains("pushup") ||
+                    slug.contains( "pushup") ||
                     name == "push up" ||
                     name == "pushup" ||
                     name.contains("push up") ||

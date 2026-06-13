@@ -53,6 +53,8 @@ class PlankActivity : AppCompatActivity() {
     private var holdSeconds = 0L
     private var timer: CountDownTimer? = null
 
+    private val formScore = FormScoreTracker()
+
     private var isHolding = false
     private var correctStreak = 0
     private var incorrectStreak = 0
@@ -153,6 +155,7 @@ class PlankActivity : AppCompatActivity() {
         isWorkoutActive = true
         elapsedSeconds = 0L
         holdSeconds = 0L
+        formScore.reset()
         correctStreak = 0
         incorrectStreak = 0
         readyStreak = 0
@@ -214,9 +217,17 @@ class PlankActivity : AppCompatActivity() {
         val exerciseSlug = intent.getStringExtra("exercise_slug") ?: "plank"
         val weeklyPlanDayId = intent.getIntExtra("weekly_plan_day_id", -1)
 
-        val reps = if (holdSeconds > 0L) 1 else 0
+        // Plank is isometric — one finished session = 1 rep on the backend
+        // regardless of how long the user held the pose. The seconds-held
+        // is shipped separately so SummaryActivity can show "33 seconds held"
+        // in the UI and history without inflating total_reps by dozens per
+        // session. Previously we packed hold seconds INTO reps and that
+        // exploded total_reps after every plank (73 → 106 from one set).
+        val heldAtLeastOnce = holdSeconds > 0L
+        val backendReps = if (heldAtLeastOnce) 1 else 0
+        val displayHoldSeconds = holdSeconds.toInt().coerceAtLeast(0)
 
-        Log.d(TAG, "finish: elapsed=$elapsedSeconds hold=$holdSeconds reps=$reps")
+        Log.d(TAG, "finish: elapsed=$elapsedSeconds hold=$holdSeconds backendReps=$backendReps")
 
         val summaryIntent = Intent(this, SummaryActivity::class.java).apply {
             putExtra("exercise_name", exerciseName)
@@ -225,7 +236,16 @@ class PlankActivity : AppCompatActivity() {
                 putExtra("weekly_plan_day_id", weeklyPlanDayId)
             }
             putExtra("duration", elapsedSeconds.toInt())
-            putExtra("reps", reps)
+            // What the backend sees in total_reps. Always 0 or 1 for plank.
+            putExtra("reps", backendReps)
+            // What the UI + local history display. Seconds-held, never
+            // forwarded to the server's rep count.
+            putExtra("hold_seconds", displayHoldSeconds)
+            // Flag so SummaryActivity knows to render "X seconds held"
+            // instead of "X reps" for this isometric exercise.
+            putExtra("is_isometric", true)
+            // -1f if no analyzed frames; SummaryActivity skips it in that case.
+            putExtra("form_score", formScore.percent())
         }
 
         startActivity(summaryIntent)
@@ -355,6 +375,12 @@ class PlankActivity : AppCompatActivity() {
 
         val geometryCorrect = bodyLineGood && hipsGood && trunkGood && legsGood
         val finalCorrect = prediction.label == "correct" && geometryCorrect
+
+        // Feed the combined verdict into the form-score aggregator so plank
+        // sessions actually appear in the Form Stats chart. Using `finalCorrect`
+        // (model + geometry) makes the score reward staying perfectly in the
+        // plank pose; any frame where the user drops out counts against it.
+        formScore.sample(if (finalCorrect) "correct" else "incorrect")
 
         var segments = PoseSkeleton.segments
         var feedbackText = when {
