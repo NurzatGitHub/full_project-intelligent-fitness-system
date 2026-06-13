@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -73,7 +74,7 @@ class ExerciseListActivity : AppCompatActivity() {
 
         val chipGroup = findViewById<ChipGroup>(R.id.chipGroup)
         val pbLoading = findViewById<ProgressBar>(R.id.pbLoading)
-        val tvEmpty = findViewById<TextView>(R.id.tvEmpty)
+        val tvEmpty = findViewById<LinearLayout>(R.id.tvEmpty)
 
         val cached = ExerciseMemoryCache.getSubcategories(main.id)
         if (!cached.isNullOrEmpty()) {
@@ -99,18 +100,15 @@ class ExerciseListActivity : AppCompatActivity() {
 
                     if (subcategories.isEmpty()) {
                         tvEmpty.visibility = View.VISIBLE
-                        tvEmpty.text = "No subcategories found"
                     } else {
                         setupChips(chipGroup, main, subcategories, pbLoading, tvEmpty, token)
                     }
                 } else {
                     tvEmpty.visibility = View.VISIBLE
-                    tvEmpty.text = "Failed to load subcategories"
                 }
             } catch (e: Exception) {
                 pbLoading.visibility = View.GONE
                 tvEmpty.visibility = View.VISIBLE
-                tvEmpty.text = "Network error"
             }
         }
     }
@@ -120,7 +118,7 @@ class ExerciseListActivity : AppCompatActivity() {
         main: MainCategory,
         subcategories: List<ExerciseSubcategoryResponse>,
         pbLoading: ProgressBar,
-        tvEmpty: TextView,
+        tvEmpty: LinearLayout,
         token: String
     ) {
         val selectedColor = getColor(MainCategoryDisplay.colorRes(main))
@@ -198,7 +196,7 @@ class ExerciseListActivity : AppCompatActivity() {
         categorySlug: String,
         subcategorySlug: String,
         pbLoading: ProgressBar,
-        tvEmpty: TextView,
+        tvEmpty: LinearLayout,
         token: String
     ) {
         val cached = ExerciseMemoryCache.getExercises(categorySlug, subcategorySlug)
@@ -230,13 +228,11 @@ class ExerciseListActivity : AppCompatActivity() {
                 } else {
                     exerciseAdapter.updateData(emptyList())
                     tvEmpty.visibility = View.VISIBLE
-                    tvEmpty.text = "Failed to load exercises"
                 }
             } catch (e: Exception) {
                 pbLoading.visibility = View.GONE
                 exerciseAdapter.updateData(emptyList())
                 tvEmpty.visibility = View.VISIBLE
-                tvEmpty.text = "Network error"
             }
         }
     }
