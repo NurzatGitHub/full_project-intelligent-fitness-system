@@ -218,20 +218,6 @@ Full OpenAPI spec at `/swagger/`.
 
 ---
 
-## Team
-
-| Role | Member |
-|---|---|
-| Backend, AI assistant, weekly plan, mobile architecture | **Nurzat Turganbek** ([@NurzatGitHub](https://github.com/NurzatGitHub)) |
-| ML training and computer vision | Zhanibek Tulegen |
-| Mobile UI / onboarding flow | Abdumalik Abdumalik |
-| Results, evaluation, dataset | Tulegen Zhanibek |
-| **Supervisor** | A. Issabek |
-
-Built at **Kazakh-British Technical University** - School of IT and Engineering - Almaty, 2026.
-
----
-
 ## License
 
 Academic project - code is provided as-is for educational and portfolio purposes. Please get in touch before reusing it in a commercial product.
