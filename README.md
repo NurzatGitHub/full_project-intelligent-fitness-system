@@ -27,7 +27,17 @@
 
 ## Demo
 
-**Live backend:** https://fitness-coach-ai-z10u.onrender.com/admin/
+**Live backend:** https://fitness-coach-ai-z10u.onrender.com/
+
+🎥 Application Demo Video
+
+
+
+Click the button above to watch the full demonstration of the FitnessCoachAI mobile application.
+
+[![Watch Demo](https://drive.google.com/file/d/1t-ur7mJpkqfIPkA1PTG0JHRpeSX04Oav/view?usp=sharing)]
+
+
 
 ---
 
