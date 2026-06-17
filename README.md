@@ -35,7 +35,7 @@
 
 Click the button above to watch the full demonstration of the FitnessCoachAI mobile application.
 
-[![Watch Demo](https://drive.google.com/file/d/1t-ur7mJpkqfIPkA1PTG0JHRpeSX04Oav/view?usp=sharing)]
+[Watch Demo](https://drive.google.com/file/d/1t-ur7mJpkqfIPkA1PTG0JHRpeSX04Oav/view?usp=sharing)
 
 
 
